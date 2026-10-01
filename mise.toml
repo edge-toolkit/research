@@ -1,0 +1,76 @@
+# Repository-wide tooling: the basic checks, run with `mise run check`.
+# Each reproduction under reproductions/ has its own mise.toml for running it; see its README.
+
+min_version = "2026.9.0"
+
+[settings]
+# Fail fast on a missing tool rather than installing it mid-task; `mise install` is the one place tools arrive.
+exec_auto_install = false
+task.run_auto_install = false
+
+[env]
+# taplo has no discovery beyond its working directory, so point it at the config beside the other checkers'.
+TAPLO_CONFIG = "{{ config_root }}/config/taplo.toml"
+
+[tools]
+"aqua:gitleaks/gitleaks" = "latest"
+dprint = "latest"
+editorconfig-checker = "latest"
+ruff = "latest"
+taplo = "latest"
+typos = "latest"
+
+[tasks.check]
+depends = ["*-check"]
+description = "Run all checks"
+
+[tasks.fmt]
+depends = ["*-fmt"]
+description = "Apply all formatters"
+
+[tasks.dprint-check]
+description = "Check Markdown, JSON and YAML formatting (dprint)"
+run = "dprint check"
+
+[tasks.dprint-fmt]
+description = "Format Markdown, JSON and YAML (dprint)"
+run = "dprint fmt"
+
+[tasks.editorconfig-check]
+description = "Check every file against .editorconfig (editorconfig-checker)"
+run = "ec -config config/editorconfig-checker.json"
+
+[tasks.gitleaks-check]
+description = "Scan the working tree for committed secrets (gitleaks)"
+run = "gitleaks dir . --config config/gitleaks.toml --no-banner"
+
+[tasks.ruff-check]
+description = "Lint Python (ruff)"
+run = "ruff check"
+
+[tasks.ruff-fmt-check]
+description = "Check Python formatting (ruff)"
+run = "ruff format --check"
+
+[tasks.ruff-fmt]
+description = "Format Python (ruff)"
+run = "ruff format"
+
+[tasks.taplo-check]
+description = "Lint TOML and check its formatting (taplo)"
+run = """
+taplo lint
+taplo format --check
+"""
+
+[tasks.taplo-fmt]
+description = "Format TOML (taplo)"
+run = "taplo format"
+
+[tasks.typos-check]
+description = "Check spelling (typos)"
+run = "typos --config config/typos.toml"
+
+[tasks.typos-fix]
+description = "Correct spelling (typos)"
+run = "typos --config config/typos.toml --write-changes"

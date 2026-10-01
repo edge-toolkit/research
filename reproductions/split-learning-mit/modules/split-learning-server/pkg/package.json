@@ -1,0 +1,8 @@
+{
+  "name": "@edge-toolkit/split-learning-server",
+  "type": "module",
+  "description": "Split-learning parameter server (MIT split-learning-demo) for et-ws-pyo3-runner",
+  "version": "0.1.0",
+  "license": "Apache-2.0 OR MIT",
+  "main": "split_learning_server.py"
+}

@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Trees we don't own, and what each deployment generates locally and gitignores"
+paths = [
+  '''(^|/)\.venv/''',
+  '''(^|/)node_modules/''',
+  '''^reproductions/[^/]+/deployment/key\.pem$''',
+  '''^reproductions/[^/]+/deployment/secrets\.env$''',
+  '''^reproductions/[^/]+/deployment/storage/''',
+  '''^reproductions/[^/]+/upstream/''',
+]

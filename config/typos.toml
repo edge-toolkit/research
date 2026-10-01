@@ -1,0 +1,3 @@
+# The upstream checkouts are other people's prose, and the rest is generated or installed, not written here.
+[files]
+extend-exclude = ["**/.venv/", "**/node_modules/", "reproductions/*/deployment/storage/", "reproductions/*/upstream/"]

@@ -1,0 +1,21 @@
+cluster_name: "split-learning-mit"
+deployment_type: "mise"
+artifact_source: "published"
+
+# Where modules of this repository live, relative to this file. Each child directory holding a `pkg/package.json` is
+# a module the scenario can name, served by the hub alongside the published edge-toolkit ones.
+module_paths:
+  - "modules"
+
+# The split-learning parameter server, run headless by the pyo3 runner. The browser half is the upstream Vue app,
+# which is served by its own dev server and so is not an agent of this cluster.
+agents:
+  - name: "split-learning-server"
+    runner: "pyo3"
+    env:
+      # A fixed id, so the trained weights land in the same storage bucket every run.
+      PYO3_AGENT_ID: "split-learning-server"
+      # The upstream `split_learning` package, and the venv holding torch and friends (see ../pyproject.toml).
+      PYO3_PYTHONPATH: "../upstream/packages/split-learning-demo/src:../.venv/lib/python3.13/site-packages"
+    resources:
+      - type: "split-learning-server"

@@ -1,0 +1,57 @@
+[env]
+NPM_CONFIG_USERCONFIG = "{{ config_root }}/npmrc"
+OTLP_AUTH_USERNAME = "root@example.com"
+
+[env._]
+file = "secrets.env"
+
+[tasks.generated-scenario]
+depends = ["openobserve", "split-learning-server", "ws-server"]
+description = "Run generated scenario for split-learning-mit"
+
+[tasks.open-o2]
+description = "Open the OpenObserve UI"
+run = "open http://localhost:5080/"
+
+[tasks.openobserve]
+alias = "o2"
+run = """
+image=openobserve/openobserve:v0.91.5
+settings="-e RUST_LOG=warn -e ZO_ROOT_USER_EMAIL=root@example.com"
+# $settings is a word-split flag list by design; do not quote it.
+docker run --rm --name openobserve -p 127.0.0.1:5080:5080 $settings -e ZO_ROOT_USER_PASSWORD "$image"
+"""
+
+[tasks.split-learning-server]
+description = "Run @edge-toolkit/split-learning-server in the pyo3 runner"
+run = """
+et-ws-pyo3-runner
+"""
+
+[tasks.split-learning-server.env]
+PYO3_AGENT_ID = "split-learning-server"
+PYO3_PYTHONPATH = "../upstream/packages/split-learning-demo/src:../.venv/lib/python3.13/site-packages"
+RUNNER_MODULE = "@edge-toolkit/split-learning-server"
+WS_SERVER_URL = "ws://localhost:8080/ws"
+
+[tasks.ws-server]
+description = "Run the WebSocket server"
+run = """
+MODULES_PATHS="../modules/split-learning-server"
+export MODULES_PATHS
+et-ws-server
+"""
+
+[tasks.ws-server.env]
+STORAGE_URL = "file://{{ config_root }}/storage"
+
+[tools]
+"cargo:open" = "latest"
+
+[tools."cargo:et-ws-pyo3-runner"]
+minimum_release_age = "0"
+version = "latest"
+
+[tools."cargo:et-ws-server"]
+minimum_release_age = "0"
+version = "latest"

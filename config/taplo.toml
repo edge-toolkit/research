@@ -1,0 +1,8 @@
+# taplo does not honour .gitignore, so the trees we don't own are excluded by hand. Generated deployments are too:
+# et-cli owns their layout, and reformatting them would only be undone by the next regeneration.
+exclude = ["**/.venv/**", "**/node_modules/**", "reproductions/*/deployment/**", "reproductions/*/upstream/**"]
+
+[formatting]
+column_width = 120
+reorder_arrays = true
+reorder_keys = true

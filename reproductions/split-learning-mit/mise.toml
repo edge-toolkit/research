@@ -1,0 +1,77 @@
+# Split learning (MIT split-learning-demo) on edge-toolkit: see README.md for the steps.
+
+[tools]
+# Generates `deployment/` from `scenario.yaml`. Its releases come from the same project as the hub and runner, so it
+# waives mise's 24h release-age hold the way the generated deployment does for those.
+"cargo:et-cli" = { version = "latest", minimum_release_age = "0" }
+node = "lts"
+pnpm = "latest"
+# The venv the pyo3 runner imports torch from has to match the CPython it embeds, and the scenario's
+# PYO3_PYTHONPATH names `python3.13`, so this pin, the venv and the runner build all move together.
+python = "3.13"
+uv = "latest"
+
+[env]
+# The web app opens its socket on page load but sends nothing until training starts, and never reconnects if the hub
+# closes it, so the hub's 15s idle close has to be off. Inherited by `deployment/`'s tasks, which run the hub.
+UV_PYTHON_DOWNLOADS = "never"
+WS_CONNECTION_TIMEOUT = "off"
+
+[tasks.setup]
+depends = ["setup:*"]
+description = "Install everything the reproduction needs"
+
+[tasks."setup:submodule"]
+description = "Check out the upstream split-learning-demo"
+run = "git submodule update --init upstream"
+
+[tasks."setup:python"]
+depends = ["setup:submodule"]
+description = "Create .venv with the server half's Python dependencies"
+run = """
+uv venv --allow-existing --python python3.13 .venv
+uv pip install --python .venv -r requirements.txt
+"""
+
+[tasks."setup:data"]
+depends = ["setup:submodule"]
+description = "Download MNIST into upstream/data/external/mnist"
+run = "uvx --from huggingface_hub hf download ylecun/mnist --repo-type dataset --local-dir upstream/data/external/mnist"
+
+[tasks."setup:web"]
+depends = ["setup:submodule"]
+description = "Install the upstream web app"
+dir = "upstream/apps/web"
+run = "pnpm install"
+
+[tasks."setup:deployment"]
+description = "Install the hub and pyo3 runner the generated deployment runs"
+# Builds the pyo3 runner against the interpreter pinned above. The real path, not the `python3.13` shim: cargo
+# builds in a temporary directory, where the shim finds no mise config and so no python version to run.
+run = """
+PYO3_PYTHON="$(mise which python3.13)"
+export PYO3_PYTHON
+cd deployment
+# The deployment asks for `latest`, which mise resolves from a cached list of released versions; refresh it, so a
+# release made since the last install is what gets installed.
+MISE_FETCH_REMOTE_VERSIONS_CACHE=0 mise install
+"""
+
+[tasks.generate]
+description = "Regenerate deployment/ from scenario.yaml"
+run = "et-cli generate-deployment --input-file scenario.yaml --output-dir deployment"
+
+[tasks.o2]
+description = "Run OpenObserve, the collector the hub sends its telemetry to (needs Docker)"
+dir = "deployment"
+run = "mise run openobserve"
+
+[tasks.server]
+description = "Run the hub and the split-learning server agent"
+dir = "deployment"
+run = "mise run ws-server ::: split-learning-server"
+
+[tasks.web]
+description = "Run the upstream web app on http://localhost:5173"
+dir = "upstream/apps/web"
+run = "pnpm run dev"

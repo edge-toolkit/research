@@ -1,0 +1,14 @@
+# Match the editorconfig line length. Without this, ruff would use its default of 88.
+extend-exclude = ["reproductions/*/upstream"]
+line-length = 120
+
+[format]
+line-ending = "lf"
+
+[lint]
+# On top of the default rule set (E, F).
+#   "ARG" -- unused arguments; a runner hook parameter kept only for the signature is renamed `_send` and so on.
+#   "B"   -- flake8-bugbear: likely bugs.
+#   "I"   -- import sorting.
+#   "UP"  -- pyupgrade: syntax the pinned Python has a better form for.
+extend-select = ["ARG", "B", "I", "UP"]

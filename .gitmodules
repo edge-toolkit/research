@@ -1,0 +1,4 @@
+[submodule "reproductions/split-learning-mit/upstream"]
+	path = reproductions/split-learning-mit/upstream
+	url = https://github.com/jayvdb/split-learning-demo.git
+	branch = frontend-train-tensorflow

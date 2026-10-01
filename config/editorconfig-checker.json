@@ -1,0 +1,10 @@
+{
+  "Exclude": [
+    "reproductions/[^/]+/upstream/",
+    "reproductions/[^/]+/deployment/registry\\.yaml$",
+    "reproductions/[^/]+/deployment/storage/",
+    "\\.onnx$",
+    "\\.venv/",
+    "node_modules/"
+  ]
+}

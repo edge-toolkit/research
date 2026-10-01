@@ -1,0 +1,9 @@
+# What the server half imports: the pyo3 module itself, and the upstream `split_learning` package it builds on.
+bitarray
+datasets
+lightning
+numpy
+onnx
+pydantic
+torch
+torchvision

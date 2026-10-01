@@ -1,0 +1,7 @@
+// Stub at the repository root so dprint's base directory -- the tree it formats -- is here, not config/.
+// dprint fixes its base to the directory of the config file it discovers, so the real config lives in config/
+// beside the other checker configs. Named dprint.json rather than .dprint.jsonc, which et-cli takes as the
+// repository-root marker.
+{
+  "extends": "config/dprint.json"
+}

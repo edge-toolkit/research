@@ -1,0 +1,34 @@
+---
+name: check
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same pull request supersedes the run in progress; pushes to main each run to completion.
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # No submodules: every check excludes the upstream checkouts.
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Installs the root mise.toml's checkers only; each reproduction's own toolchain is not needed to check it.
+      - name: Install mise and the checkers
+        uses: jdx/mise-action@v5
+
+      - name: Run the checks
+        run: mise run check
