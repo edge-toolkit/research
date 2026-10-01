@@ -38,7 +38,7 @@ run = "dprint fmt"
 
 [tasks.editorconfig-check]
 description = "Check every file against .editorconfig (editorconfig-checker)"
-run = "ec -config config/editorconfig-checker.json"
+run = "editorconfig-checker -config config/editorconfig-checker.json"
 
 [tasks.gitleaks-check]
 description = "Scan the working tree for committed secrets (gitleaks)"
