@@ -1,5 +1,5 @@
 # Match the editorconfig line length. Without this, ruff would use its default of 88.
-extend-exclude = ["reproductions/*/upstream"]
+extend-exclude = ["reproductions/*/upstream", "reproductions/tiny-training-mit/modules/zig-te-train1"]
 line-length = 120
 
 [format]

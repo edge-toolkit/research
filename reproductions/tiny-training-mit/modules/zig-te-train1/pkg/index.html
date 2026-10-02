@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>TinyEngine VWW Training</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        color: #eee;
+        background: #111;
+      }
+
+      body {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 3rem 1.25rem;
+      }
+
+      a {
+        color: #8fc7ff;
+      }
+
+      #status {
+        color: #aaa;
+      }
+
+      #module-ui-et-ws-zig-te-train1 {
+        max-width: 36rem;
+        margin: 2rem 0;
+        padding: 1rem;
+        border: 1px solid #333;
+        border-radius: 0.5rem;
+        color: #eee;
+        background: #1e1e1e;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      #module-output {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 10rem;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        border: 1px solid #333;
+        border-radius: 0.4rem;
+        color: #9f9;
+        background: #080808;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>TinyEngine VWW Training</h1>
+      <p>
+        Capture an image from your camera, choose a label, and train or run
+        inference locally in WebAssembly.
+      </p>
+      <p>
+        For the reproducible person-versus-scene experiment, open the
+        <a href="./demo/">sample-dataset demo</a>.
+      </p>
+      <p id="status">Starting module…</p>
+      <section id="module-ui-et-ws-zig-te-train1" data-embedded="true"></section>
+      <textarea id="module-output" readonly aria-label="Module output"></textarea>
+    </main>
+
+    <script type="module">
+      import { run } from "./et_ws_zig_te_train1.js?v=released-et-protocol-20261002";
+
+      const status = document.querySelector("#status");
+      try {
+        await run();
+        status.textContent = "Module ready.";
+      } catch (error) {
+        status.textContent = `Could not start the module: ${error.message || error}`;
+        console.error(error);
+      }
+    </script>
+  </body>
+</html>

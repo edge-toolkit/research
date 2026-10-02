@@ -8,7 +8,16 @@
     "**/node_modules",
     "**/.venv",
     "reproductions/*/upstream",
-    "reproductions/*/deployment"
+    "reproductions/*/deployment",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/.pixi",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/.tvm-macos",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/.zig-cache",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/.sample-pack-cache",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/backup",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/codegen-*",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/triplets",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/vendor",
+    "reproductions/tiny-training-mit/modules/zig-te-train1/pkg/demo/sample-pack"
   ],
   "plugins": [
     "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
