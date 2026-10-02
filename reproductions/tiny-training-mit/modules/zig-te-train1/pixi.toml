@@ -1,0 +1,37 @@
+[workspace]
+channels = ["conda-forge", "https://repo.anaconda.com/pkgs/main"]
+name = "zig-te-train1"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+pip = "*"
+python = "3.9.*"
+
+[pypi-dependencies]
+apache-tvm = "==0.11.1"
+attrs = "==26.1.0"
+cloudpickle = "==3.1.2"
+dask = "==2024.8.0"
+decorator = "==5.3.1"
+easydict = "==1.13"
+graphviz = "==0.21"
+matplotlib = "*"
+numpy = "==1.26.4"
+pandas = "==2.3.3"
+pillow = "==11.3.0"
+psutil = "==7.2.2"
+pyyaml = "==6.0.3"
+scikit-learn = "==1.6.1"
+scipy = "==1.13.1"
+synr = "==0.6.0"
+torch = "==1.13.1+cpu"
+torchvision = "==0.14.1+cpu"
+tornado = "==6.5.5"
+tqdm = "==4.67.3"
+
+[pypi-options]
+extra-index-urls = ["https://download.pytorch.org/whl/cpu"]
+index-strategy = "unsafe-best-match"

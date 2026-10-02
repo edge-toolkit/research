@@ -4,8 +4,13 @@ useDefault = true
 [allowlist]
 description = "Trees we don't own, and what each deployment generates locally and gitignores"
 paths = [
+  '''(^|/)\.pixi/''',
+  '''(^|/)\.tvm-macos/''',
   '''(^|/)\.venv/''',
+  '''(^|/)\.zig-cache/''',
   '''(^|/)node_modules/''',
+  '''(^|/)vendor/''',
+  '''^reproductions/[^/]+/(cert|key)\.pem$''',
   '''^reproductions/[^/]+/deployment/key\.pem$''',
   '''^reproductions/[^/]+/deployment/secrets\.env$''',
   '''^reproductions/[^/]+/deployment/storage/''',

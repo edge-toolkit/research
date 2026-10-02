@@ -1,0 +1,35 @@
+[tools]
+"cargo:et-ws-server" = { version = "latest", minimum_release_age = "0" }
+node = "22"
+pixi = "0.70.0"
+rust = "stable"
+zig = "latest"
+
+[tasks.setup]
+description = "Generate TinyEngine sources and build the Zig WebAssembly module"
+dir = "modules/zig-te-train1"
+run = "mise run setup"
+
+[tasks.build]
+description = "Rebuild WebAssembly from previously generated sources"
+dir = "modules/zig-te-train1"
+run = "mise run build"
+
+[tasks.smoke]
+description = "Run the module's headless smoke verifier"
+dir = "modules/zig-te-train1"
+run = "mise run smoke"
+
+[tasks.server]
+description = "Run the released edge-toolkit server with the TinyEngine training module"
+run = '''
+MODULES_PATHS="modules/zig-te-train1"
+MODULES_ROOT="et-ws-zig-te-train1"
+export MODULES_PATHS
+export MODULES_ROOT
+et-ws-server
+'''
+
+[tasks.run]
+depends = ["server"]
+description = "Run the Tiny Training reproduction"

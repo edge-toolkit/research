@@ -1,1 +1,9 @@
 .ruff_cache/
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.pixi/
+.zig-cache/
+zig-out/
+node_modules/

@@ -1,0 +1,17 @@
+backup/
+.zig-cache/
+zig-out/
+__pycache__/
+*.py[cod]
+codegen.path-b-backup/
+codegen-mcunet/
+codegen-mbv2/
+codegen-proxyless/
+vendor/
+triplets/
+.model/
+.sample-pack-cache/
+pkg/demo/sample-pack/
+pkg/*.wasm
+pkg/package.json
+.tvm-macos/

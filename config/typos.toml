@@ -1,3 +1,15 @@
 # The upstream checkouts are other people's prose, and the rest is generated or installed, not written here.
+[default.extend-words]
+SUR = "SUR"
+pathc = "pathc"
+sur = "sur"
+unparseable = "unparseable"
+
 [files]
-extend-exclude = ["**/.venv/", "**/node_modules/", "reproductions/*/deployment/storage/", "reproductions/*/upstream/"]
+extend-exclude = [
+  "**/.venv/",
+  "**/node_modules/",
+  "reproductions/*/deployment/storage/",
+  "reproductions/*/upstream/",
+  "reproductions/tiny-training-mit/modules/zig-te-train1/pkg/",
+]
