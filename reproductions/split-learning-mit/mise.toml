@@ -53,7 +53,10 @@ PYO3_PYTHON="$(mise which python3.13)"
 export PYO3_PYTHON
 cd deployment
 # The deployment asks for `latest`, which mise resolves from a cached list of released versions; refresh it, so a
-# release made since the last install is what gets installed.
+# release made since the last install is what gets installed. For the same reason its lockfile is removed rather
+# than honoured: `lockfile = true` in the repository root writes one on the first install, which would otherwise pin
+# that day's hub and runner from then on. It is gitignored, so nothing depends on it surviving.
+rm -f mise.lock
 MISE_FETCH_REMOTE_VERSIONS_CACHE=0 mise install
 """
 

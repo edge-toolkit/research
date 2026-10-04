@@ -7,6 +7,12 @@ min_version = "2026.9.0"
 # Fail fast on a missing tool rather than installing it mid-task; `mise install` is the one place tools arrive.
 exec_auto_install = false
 task.run_auto_install = false
+# Lock every tool resolution to the mise.lock committed beside each config, here and in each reproduction.
+# The lock pins each `latest` to a concrete version + checksum, so a checkout installs what was last locked rather
+# than whatever was released since. `lockfile = true` also keeps it updated on installs. Refresh with `mise lock`
+# in the config's directory; `mise lock --bump` re-resolves the `latest` selectors for a deliberate tool refresh.
+lockfile = true
+lockfile_platforms = ["linux-arm64", "linux-x64", "macos-arm64", "macos-x64", "windows-x64"]
 
 [env]
 # taplo has no discovery beyond its working directory, so point it at the config beside the other checkers'.
@@ -16,9 +22,15 @@ TAPLO_CONFIG = "{{ config_root }}/config/taplo.toml"
 "aqua:gitleaks/gitleaks" = "latest"
 dprint = "latest"
 editorconfig-checker = "latest"
+# Reading pull request checks and review comments; see AGENTS.md.
+gh = "latest"
+# Upstream publishes binaries only for Linux and macOS arm64.
+"github:zhupanov/agent-lint" = { version = "latest", os = ["linux", "macos/arm64"] }
+ripgrep = "latest"
 ruff = "latest"
 taplo = "latest"
 typos = "latest"
+yq = "latest"
 
 [tasks.check]
 depends = ["*-check"]
@@ -27,6 +39,17 @@ description = "Run all checks"
 [tasks.fmt]
 depends = ["*-fmt"]
 description = "Apply all formatters"
+
+[tasks.agent-lint-check]
+description = "Lint the agent configuration, AGENTS.md (agent-lint)"
+# The tool is os-scoped to the platforms upstream publishes for, which cannot exclude macOS x86_64 on its own.
+run = """
+if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" != "arm64" ]; then
+  echo "agent-lint-check: upstream publishes no macOS x86_64 binary; nothing to check on this host"
+  exit 0
+fi
+agent-lint .
+"""
 
 [tasks.dprint-check]
 description = "Check Markdown, JSON and YAML formatting (dprint)"
@@ -43,6 +66,42 @@ run = "editorconfig-checker -config config/editorconfig-checker.json"
 [tasks.gitleaks-check]
 description = "Scan the working tree for committed secrets (gitleaks)"
 run = "gitleaks dir . --config config/gitleaks.toml --no-banner"
+
+# Fail when a committed mise.lock no longer matches what its config resolves: a tool added, removed or re-pinned in a
+# mise.toml without regenerating the lock beside it. `mise lock` keeps the locked version of an unchanged `latest`,
+# and covers every platform in lockfile_platforms, so a lock that is up to date regenerates byte for byte. Each lock
+# is compared with its own contents before regenerating rather than with the index, so a refreshed but not yet staged
+# lock passes. Every committed mise.toml needs a committed lock beside it, except a generated deployment's, which
+# installs the latest hub and runner on purpose.
+[tasks.mise-lock-check]
+description = "Check every committed mise.toml has a committed mise.lock that is up to date with it"
+run = """
+set -eu
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+failed=0
+for config in $(git ls-files '*mise.toml'); do
+  case "$config" in
+    */deployment/mise.toml) continue ;;
+  esac
+  lock="$(dirname "$config")/mise.lock"
+  if ! git ls-files --error-unmatch "$lock" >/dev/null 2>&1; then
+    echo "$config has no committed mise.lock; run \\`mise lock\\` beside it and commit the result" >&2
+    failed=1
+  fi
+done
+i=0
+for lock in $(git ls-files '*mise.lock'); do
+  i=$((i + 1))
+  if [ -f "$lock" ]; then cp "$lock" "$tmp/$i"; else : > "$tmp/$i"; fi
+  mise -C "$(dirname "$lock")" lock --quiet
+  if ! diff -u --label "$lock (before)" --label "$lock (regenerated)" "$tmp/$i" "$lock"; then
+    echo "$lock is out of date with its mise.toml; run \\`mise lock\\` beside it and commit the result" >&2
+    failed=1
+  fi
+done
+exit "$failed"
+"""
 
 [tasks.ruff-check]
 description = "Lint Python (ruff)"

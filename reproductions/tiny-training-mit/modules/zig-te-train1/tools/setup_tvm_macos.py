@@ -72,9 +72,10 @@ def run(argv: list[str], *, cwd: Path | None = None, env: dict[str, str] | None 
 def require_local_root(path: Path) -> Path:
     """Keep --force from deleting the module directory or an external path."""
     resolved = path.resolve()
-    cwd = Path.cwd().resolve()
-    if resolved == cwd or cwd not in resolved.parents:
-        raise SystemExit(f"--root must be a child of the current module directory: {path}")
+    # The module directory, not the cwd: mise runs this from tools/tvm-macos-env with --root ../../.tvm-macos.
+    module_dir = Path(__file__).resolve().parents[1]
+    if resolved == module_dir or module_dir not in resolved.parents:
+        raise SystemExit(f"--root must be a child of the module directory {module_dir}: {path}")
     return path
 
 
