@@ -9,3 +9,7 @@ cert.pem
 key.pem
 registry.yaml
 storage/
+
+# Written by `mise install` and removed by the reproduction's `setup:deployment`, which always installs the newest
+# hub and runner rather than the ones locked on a previous install.
+mise.lock

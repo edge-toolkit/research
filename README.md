@@ -18,13 +18,14 @@ original infrastructure, and records what changed.
 Each reproduction is self-contained under `reproductions/<name>/`:
 
 - `README.md`: what is being reproduced, how to run it, and how it differs from the original.
-- `mise.toml`: the tools and tasks to set it up and run it.
+- `mise.toml` and `mise.lock`: the tools and tasks to set it up and run it, and the tool versions locked for it.
 - `modules/`: the edge-toolkit modules written for it.
 
 A reproduction may also contain:
 
 - `upstream/`: original code as a Git submodule pinned to the reproduced version.
 - `scenario.yaml` and `deployment/`: an et-cli cluster input and its generated deployment.
+- `screenshots/`: screenshots of a run of it.
 
 Browser-hosted modules that do not need a headless runner may use hand-written mise tasks and generate large build
 inputs locally.
@@ -52,5 +53,10 @@ mise run check
 ```
 
 That runs dprint (Markdown, JSON, YAML), editorconfig-checker, gitleaks, ruff (Python lint and format), taplo (TOML)
-and typos. `mise run fmt` applies the formatters. Upstream submodules, virtualenvs and `node_modules` are excluded
-throughout, and the generated `deployment/` directories are left to et-cli rather than the formatters.
+and typos, and checks every committed `mise.lock` is up to date with its `mise.toml`. `mise run fmt` applies the
+formatters. Upstream submodules, virtualenvs and `node_modules` are excluded throughout, and the generated
+`deployment/` directories are left to et-cli rather than the formatters.
+
+Tool versions are locked in the `mise.lock` beside each `mise.toml`, so `latest` installs what was last locked. After
+changing a `mise.toml`, run `mise lock` in its directory; `mise lock --bump` moves the `latest` tools to their newest
+releases. The generated `deployment/` directories are the exception: they always install the newest hub and runner.
