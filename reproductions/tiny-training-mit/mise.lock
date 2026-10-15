@@ -3,7 +3,7 @@
 lockfile_version = 3
 
 [[tools."cargo:et-ws-server"]]
-version = "0.2.2"
+version = "0.3.0"
 backend = "cargo:et-ws-server"
 specifiers = ["latest"]
 

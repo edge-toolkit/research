@@ -51,6 +51,39 @@ fi
 agent-lint .
 """
 
+# Removes what `mise install` and each reproduction's `mise run setup` rebuild, which includes tiny-training's TVM
+# build. It keeps what was downloaded or produced by a run: the datasets, the hub's agent storage and the
+# deployment's credential.
+#
+# mise prune parses every config mise has tracked on this machine, and fails on one whose [tools] use its own [vars],
+# as edge-toolkit/core's do: "failed to parse template {{ vars.rust_nightly }}" with "Field `rust_nightly` is not
+# defined." The fixes, jdx/mise#12188 and jdx/mise#14008, were closed unmerged, so the task carries on to the
+# artifacts when the prune fails.
+[tasks.clean]
+description = "Remove unused versions of this repository's mise tools, and built artifacts"
+run = """
+set -eu
+dry_run=""
+if [ "${usage_dry_run:-false}" = "true" ]; then dry_run="--dry-run"; fi
+# Only the tools this repository names; mise prune keeps any version another tracked config still uses.
+tools="$(git ls-files '*mise.toml' | while read -r config; do
+  mise -C "$(dirname "$config")" ls --local --json 2>/dev/null | yq -p json 'keys | .[]'
+done | sort -u)"
+# $tools is a word-split list by design; do not quote it.
+if ! mise prune --tools --yes $dry_run $tools; then
+  echo "clean: mise prune failed (above), so no tool versions were removed; continuing with built artifacts" >&2
+fi
+# Each `-e '!…'` un-ignores a path, which -X then leaves alone. The doubled -f also removes the upstream checkouts
+# tiny-training's setup clones, and -n, when given, wins over it.
+git clean -d -X -f -f ${dry_run:+-n} \\
+  -e '!reproductions/split-learning-mit/deployment/secrets.env' \\
+  -e '!reproductions/split-learning-mit/deployment/storage/' \\
+  -e '!reproductions/tiny-training-mit/modules/zig-te-train1/.sample-pack-cache/'
+# The submodule's own data/external/.gitignore outranks `-e`, so name what to clean rather than what to keep.
+git -C reproductions/split-learning-mit/upstream clean -d -X -f ${dry_run:+-n} -- apps packages
+"""
+usage = 'flag "-n --dry-run" help="List what would be removed without removing it"'
+
 [tasks.dprint-check]
 description = "Check Markdown, JSON and YAML formatting (dprint)"
 run = "dprint check"
@@ -71,8 +104,7 @@ run = "gitleaks dir . --config config/gitleaks.toml --no-banner"
 # mise.toml without regenerating the lock beside it. `mise lock` keeps the locked version of an unchanged `latest`,
 # and covers every platform in lockfile_platforms, so a lock that is up to date regenerates byte for byte. Each lock
 # is compared with its own contents before regenerating rather than with the index, so a refreshed but not yet staged
-# lock passes. Every committed mise.toml needs a committed lock beside it, except a generated deployment's, which
-# installs the latest hub and runner on purpose.
+# lock passes. Every committed mise.toml needs a committed lock beside it.
 [tasks.mise-lock-check]
 description = "Check every committed mise.toml has a committed mise.lock that is up to date with it"
 run = """
@@ -81,9 +113,6 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 failed=0
 for config in $(git ls-files '*mise.toml'); do
-  case "$config" in
-    */deployment/mise.toml) continue ;;
-  esac
   lock="$(dirname "$config")/mise.lock"
   if ! git ls-files --error-unmatch "$lock" >/dev/null 2>&1; then
     echo "$config has no committed mise.lock; run \\`mise lock\\` beside it and commit the result" >&2
