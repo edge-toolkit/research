@@ -10,9 +10,10 @@ paths = [
   '''(^|/)\.zig-cache/''',
   '''(^|/)node_modules/''',
   '''(^|/)vendor/''',
+  '''^(experiments|reproductions)/[^/]+/results/''',
   '''^reproductions/[^/]+/(cert|key)\.pem$''',
-  '''^reproductions/[^/]+/deployment/key\.pem$''',
-  '''^reproductions/[^/]+/deployment/secrets\.env$''',
   '''^reproductions/[^/]+/deployment/storage/''',
+  '''^reproductions/[^/]+/deployment[^/]*/key\.pem$''',
+  '''^reproductions/[^/]+/deployment[^/]*/secrets\.env$''',
   '''^reproductions/[^/]+/upstream/''',
 ]

@@ -1,0 +1,21 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=68"]
+
+[project]
+dependencies = []
+description = "Reliability benchmark control and Core recovery evidence for Edge Toolkit applications"
+name = "et-experiment-runtime"
+requires-python = ">=3.11"
+version = "0.1.0"
+
+[project.scripts]
+et-benchmark-o2 = "et_experiments.tracking.o2:main"
+et-benchmark-o2-dashboard = "et_experiments.tracking.o2_dashboard:main"
+et-benchmark-ui = "et_experiments.web.controller:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"et_experiments.web" = ["index.html"]

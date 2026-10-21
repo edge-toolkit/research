@@ -7,7 +7,7 @@ exclude = [
   "**/.zig-cache/**",
   "**/node_modules/**",
   "**/vendor/**",
-  "reproductions/*/deployment/**",
+  "reproductions/*/deployment*/**",
   "reproductions/*/upstream/**",
 ]
 

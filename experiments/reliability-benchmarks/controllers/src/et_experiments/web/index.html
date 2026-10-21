@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Reliability Benchmark Controller</title>
+    <style>
+      body { font: 16px system-ui; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+      label, select, input, button { display: block; margin: .6rem 0; }
+      input, select, button { padding: .5rem; min-width: 18rem; }
+      pre { min-height: 20rem; padding: 1rem; overflow: auto; color: #d8dee9; background: #20242c; }
+      pre.compact { min-height: 0; white-space: pre-wrap; }
+      .row { display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Reliability Benchmark Controller</h1>
+    <h2 id="title">Application benchmarks</h2>
+    <p id="description"></p>
+    <label for="scenario">Scenario</label>
+    <select id="scenario"></select>
+    <p id="scenario-description"></p>
+    <p id="recovery-scope">
+      Core supervises recovery; research injects faults and evaluates the combined deployed system.
+    </p>
+    <div id="parameters"></div>
+    <div class="row"><button id="run">Run benchmark</button><button id="cancel" disabled>Cancel</button></div>
+    <p id="status">Ready</p>
+    <pre id="logs"></pre>
+    <h2>Recovery attribution</h2>
+    <pre id="attribution" class="compact">No recovery evidence yet.</pre>
+    <h2>Recovery results</h2>
+    <pre id="results">No results yet.</pre>
+    <h2>OpenObserve export</h2>
+    <p>Uses the existing Core O2 service when configured. Local results remain available if export fails.</p>
+    <pre id="o2" class="compact">No results exported yet.</pre>
+    <script>
+      const scenario = document.querySelector("#scenario");
+      const parameters = document.querySelector("#parameters");
+      const status = document.querySelector("#status");
+      const logs = document.querySelector("#logs");
+      const cancel = document.querySelector("#cancel");
+      let catalog;
+      let activeRun;
+
+      function renderParameters() {
+        const selected = catalog.scenarios[scenario.value];
+        document.querySelector("#scenario-description").textContent = selected.description || "";
+        parameters.replaceChildren();
+        for (const [name, definition] of Object.entries(selected.parameters || {})) {
+          const label = document.createElement("label");
+          label.textContent = definition.label || name;
+          const input = document.createElement(definition.choices ? "select" : "input");
+          if (definition.choices) {
+            for (const choice of definition.choices) input.add(new Option(String(choice), String(choice)));
+          }
+          input.dataset.name = name;
+          input.dataset.type = definition.type;
+          if (!definition.choices) {
+            input.type = definition.type === "boolean" ? "checkbox" : "number";
+            if (definition.type === "string") input.type = "text";
+          }
+          if (definition.minimum !== undefined) input.min = definition.minimum;
+          if (definition.maximum !== undefined) input.max = definition.maximum;
+          if (input.type === "checkbox") input.checked = definition.default;
+          else input.value = definition.default;
+          label.append(input);
+          parameters.append(label);
+        }
+      }
+
+      function parameterValues() {
+        return Object.fromEntries([...parameters.querySelectorAll("input,select")].map((input) => {
+          let value = input.value;
+          if (input.dataset.type === "integer") value = Number.parseInt(value, 10);
+          if (input.dataset.type === "number") value = Number.parseFloat(value);
+          if (input.dataset.type === "boolean") {
+            value = input.tagName === "SELECT" ? input.value === "true" : input.checked;
+          }
+          return [input.dataset.name, value];
+        }));
+      }
+
+      async function poll() {
+        if (!activeRun) return;
+        const response = await fetch(`/api/runs/${activeRun}`);
+        const run = await response.json();
+        status.textContent = `${run.status}: ${run.run_id}`;
+        logs.textContent = run.logs.join("\n");
+        logs.scrollTop = logs.scrollHeight;
+        document.querySelector("#results").textContent = JSON.stringify({
+          summary: run.summary, repetitions: run.results,
+        }, null, 2);
+        document.querySelector("#o2").textContent = run.results.map((result, i) => {
+          const o2 = result.o2 || { status: "not configured" };
+          return `Repetition ${i + 1}: ${o2.status}` +
+            (o2.records !== undefined ? ` (${o2.records} records, stream: ${o2.stream})` : "") +
+            (o2.reason ? ` — ${o2.reason}; check configuration or replay the local outbox.` : "");
+        }).join("\n") || "Awaiting benchmark results. Results export after each repetition.";
+        document.querySelector("#attribution").textContent = run.results.length ? run.results.map((result, i) => {
+          const a = result.attribution || {};
+          const t = result.tracking_recovery || {};
+          return [
+            `Repetition ${i + 1}: ${result.status}`,
+            `Mode: ${a.recovery_mode || "unspecified"}`,
+            `Recovery actor(s): ${(a.recovery_actors || []).join(", ") || "unattributed"}`,
+            `Verified evidence: ${(a.evidence_levels || []).join(", ") || "not measured"}`,
+            `Recovery intervention: ${a.intervention_occurred ? "yes" : "none recorded"}`,
+            `Tracking ingestion: ${t.status || "not measured"}${t.recovery_actor ? ` (${t.recovery_actor})` : ""}`,
+            ...(t.status !== "not-applicable" && t.status ? [
+              `All round metrics present: ${t.all_round_metrics_present ? "yes" : "not verified"}`,
+              `MLflow run finished: ${t.run_finished ? "yes" : "not verified"}`,
+            ] : []),
+            `Scope: ${a.scope || "unspecified"}`,
+          ].join("\n");
+        }).join("\n\n") : "Awaiting verified recovery evidence; see progress logs.";
+        if (["queued", "running", "cancelling"].includes(run.status)) setTimeout(poll, 1000);
+        else cancel.disabled = true;
+      }
+
+      document.querySelector("#run").addEventListener("click", async () => {
+        const response = await fetch("/api/runs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenario: scenario.value, parameters: parameterValues() }),
+        });
+        const run = await response.json();
+        if (!response.ok) { status.textContent = run.error; return; }
+        activeRun = run.run_id;
+        cancel.disabled = false;
+        poll();
+      });
+      cancel.addEventListener("click", async () => {
+        await fetch(`/api/runs/${activeRun}/cancel`, { method: "POST" });
+        poll();
+      });
+
+      fetch("/api/catalog").then((response) => response.json()).then((value) => {
+        catalog = value;
+        document.querySelector("#title").textContent = value.name;
+        document.querySelector("#description").textContent = value.description;
+        for (const name of Object.keys(value.scenarios)) scenario.add(new Option(name, name));
+        scenario.addEventListener("change", renderParameters);
+        renderParameters();
+      });
+    </script>
+  </body>
+</html>

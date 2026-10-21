@@ -1,0 +1,19 @@
+[tools]
+python = "latest"
+uv = "latest"
+
+[tasks.benchmark-ui]
+description = "Run the standalone benchmark UI with an explicitly selected application catalog"
+run = "uv run --python python --project controllers et-benchmark-ui --results-dir results"
+
+[tasks.test]
+description = "Test benchmarking independently of application modules, datasets and training libraries"
+run = "mise -C controllers run test"
+
+[tasks.o2-dashboard]
+description = "Generate the native OpenObserve benchmark dashboard for import"
+run = "uv run --python python --project controllers et-benchmark-o2-dashboard --output results/o2-dashboard.json"
+
+[tasks.o2-export]
+description = "Export an existing benchmark report or replay a retained O2 outbox"
+run = "uv run --python python --project controllers et-benchmark-o2"
