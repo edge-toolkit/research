@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "name": "Minimal module adapter example",
+  "description": "Demonstrates the adapter interface with a lightweight synthetic workload.",
+  "adapter": { "command": ["python", "adapter.py"], "cwd": "." },
+  "parameters": {
+    "work_units": { "type": "integer", "default": 3, "minimum": 1, "maximum": 10 }
+  },
+  "scenarios": { "baseline": { "description": "Adapter protocol smoke test using synthetic results" } }
+}

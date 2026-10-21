@@ -1,0 +1,7 @@
+[tools]
+python = "latest"
+uv = "latest"
+
+[tasks.test]
+description = "Test the shared experiment controllers independently of any application"
+run = "uv run --python python --project . python -m unittest discover -s tests -p 'test_*.py'"

@@ -40,6 +40,14 @@ description = "Run all checks"
 depends = ["*-fmt"]
 description = "Apply all formatters"
 
+[tasks.test-experiments]
+description = "Run the shared experiment controllers' application-independent tests"
+run = "mise -C experiments/reliability-benchmarks/controllers run test"
+
+[tasks.benchmark-ui]
+description = "Run the standalone benchmark UI; supply --catalog and serve or list"
+run = "mise -C experiments/reliability-benchmarks run benchmark-ui"
+
 [tasks.agent-lint-check]
 description = "Lint the agent configuration, AGENTS.md (agent-lint)"
 # The tool is os-scoped to the platforms upstream publishes for, which cannot exclude macOS x86_64 on its own.
