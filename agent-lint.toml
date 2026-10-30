@@ -1,0 +1,3 @@
+# Installed dependencies are not repository-owned agent instructions.
+[lint]
+exclude = ["**/.venv/**", "**/node_modules/**"]

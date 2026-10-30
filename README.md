@@ -1,10 +1,20 @@
 # Research
 
-Reproductions of research papers and demos on [edge-toolkit](https://github.com/edge-toolkit/core). Each one takes
-a published result or demo, reruns it with edge-toolkit's hub and, where applicable, its runners in place of the
-original infrastructure, and records what changed.
+Research projects and reproductions built on [edge-toolkit](https://github.com/edge-toolkit/core).
+
+## Experiments
+
+- [Reliability benchmarks](experiments/reliability-benchmarks): failure recovery and degraded-input experiments,
+  with a standalone benchmark controller and UI that accept application catalogs.
+
+The [shared controllers](experiments/reliability-benchmarks/controllers) provide the benchmark UI, fault injection,
+recovery evidence, metrics and tracking. Core owns operational recovery policy; each application supplies its catalog
+and adapter. Run `mise run test-experiments` after installing the controllers directory's mise tools.
 
 ## Reproductions
+
+Each reproduction takes a published result or demo, reruns it with edge-toolkit's hub and, where applicable, its
+runners in place of the original infrastructure, and records what changed.
 
 - [Split learning for health: Distributed deep learning without sharing raw patient data][vepakomma2018]
   (Vepakomma, Gupta, Swedish and Raskar, MIT Media Lab, 2018):
@@ -56,6 +66,15 @@ That runs dprint (Markdown, JSON, YAML), editorconfig-checker, gitleaks, ruff (P
 and typos, and checks every committed `mise.lock` is up to date with its `mise.toml`. `mise run fmt` applies the
 formatters. Upstream submodules, virtualenvs and `node_modules` are excluded throughout, and the generated
 `deployment/` directories are left to et-cli rather than the formatters.
+
+Application tests can also be run locally before pushing, without requiring additional CI gates:
+
+```bash
+mise run test-experiments
+```
+
+Applications provide their own setup, deployment and test commands. The shared controller tests require no application
+checkout, dataset or running Edge Toolkit deployment.
 
 Tool versions are locked in the `mise.lock` beside each `mise.toml`, so `latest` installs what was last locked. After
 changing a `mise.toml`, run `mise lock` in its directory; `mise lock --bump` moves the `latest` tools to their newest
