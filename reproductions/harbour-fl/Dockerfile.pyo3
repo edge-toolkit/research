@@ -1,0 +1,19 @@
+FROM et-ws-pyo3-runner-core:local
+
+USER root
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+ARG WITH_DETECTION=0
+ENV PYTHONPATH=/opt/et-python
+ENV HARBOUR_FL_DETECTOR_CACHE=/tmp/harbour-fl-detector-cache
+COPY src/harbour_fl /opt/et-python/harbour_fl
+COPY models /opt/models
+COPY .local-core-python /opt/et-core-wheels
+RUN /opt/cpython/bin/python3 -m pip install --no-cache-dir --target /opt/et-python /opt/et-core-wheels/*.whl
+RUN /opt/cpython/bin/python3 -m pip install --no-cache-dir --target /opt/et-python \
+      --index-url "$TORCH_INDEX_URL" "torch==2.12.1" "torchvision==0.27.1" \
+    && /opt/cpython/bin/python3 -m pip install --no-cache-dir --target /opt/et-python \
+      "mlflow==3.17.2" "numpy>=1.26" "scipy>=1.12" "pillow==12.3.0" "websocket-client>=1.8,<2"
+RUN if [ "$WITH_DETECTION" = "1" ]; then \
+      /opt/cpython/bin/python3 -m pip install --no-cache-dir --target /opt/et-python "onnxruntime>=1.23,<2"; \
+    fi
+USER 10001

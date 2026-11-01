@@ -1,0 +1,8 @@
+{
+  "name": "@edge-toolkit/harbour-fl-engine",
+  "type": "module",
+  "description": "Three-client multimodal vessel federated-learning engine",
+  "version": "0.1.0",
+  "license": "Apache-2.0 OR MIT",
+  "main": "et_ws_pyo3_harbour_fl_demo.py"
+}

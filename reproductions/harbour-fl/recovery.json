@@ -1,0 +1,34 @@
+{
+  "context": "k3d-harbour-fl",
+  "namespace": "et-harbour-fl",
+  "workloads": ["vessel-1", "vessel-2", "vessel-3", "vessel-coordinator"],
+  "supervisor_deployment": "recovery-supervisor",
+  "supervisor_role": "recovery-supervisor",
+  "job_id": "harbour-fl-demo",
+  "mode": "observe-only",
+  "poll_seconds": 2,
+  "command_timeout_seconds": 10,
+  "resilience": {
+    "reconnect": true,
+    "connect_timeout_seconds": 30,
+    "max_concurrent_recoveries": 1,
+    "action_interval_seconds": 5,
+    "backoff_multiplier": 2,
+    "backoff_max_seconds": 300,
+    "jitter_seconds": 2,
+    "stability_seconds": 0,
+    "dependencies": {
+      "vessel-1": ["ws-server"],
+      "vessel-2": ["ws-server"],
+      "vessel-3": ["ws-server"],
+      "vessel-coordinator": ["ws-server"]
+    }
+  },
+  "policy": {
+    "detection_grace_seconds": 3,
+    "restart_after_seconds": 20,
+    "stall_seconds": 180,
+    "deadline_seconds": 240,
+    "max_restarts": 2
+  }
+}

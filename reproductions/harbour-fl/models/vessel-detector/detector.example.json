@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "model": "model.onnx",
+  "num_classes": 1,
+  "class_ids": [0],
+  "input_size": 640,
+  "confidence": 0.25,
+  "iou": 0.45,
+  "margin": 0.05,
+  "selection": "largest",
+  "no_detection": "full-image",
+  "cache": true
+}

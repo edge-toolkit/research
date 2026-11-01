@@ -1,0 +1,74 @@
+cluster_name: "harbour-fl"
+deployment_type: "mise"
+artifact_source: "published"
+
+module_paths:
+  - "modules"
+  - ".local-modules"
+
+agents:
+  - name: "vessel-1"
+    runner: "pyo3"
+    env:
+      PYO3_AGENT_ID: "vessel-1"
+      PYO3_PYTHONPATH: &native_python_path >-
+        ../src:/opt/et-python
+      HARBOUR_FL_CLIENT_ID: "vessel_1"
+      HARBOUR_FL_DATA_ROOT: "../data/prepared"
+      HARBOUR_FL_ROLE: "client"
+      HARBOUR_FL_MODEL_PROFILE: "pretrained"
+    resources:
+      - type: "harbour-fl-engine"
+
+  - name: "vessel-2"
+    runner: "pyo3"
+    env:
+      PYO3_AGENT_ID: "vessel-2"
+      PYO3_PYTHONPATH: *native_python_path
+      HARBOUR_FL_CLIENT_ID: "vessel_2"
+      HARBOUR_FL_DATA_ROOT: "../data/prepared"
+      HARBOUR_FL_ROLE: "client"
+      HARBOUR_FL_MODEL_PROFILE: "pretrained"
+    resources:
+      - type: "harbour-fl-engine"
+
+  - name: "vessel-3"
+    runner: "pyo3"
+    env:
+      PYO3_AGENT_ID: "vessel-3"
+      PYO3_PYTHONPATH: *native_python_path
+      HARBOUR_FL_CLIENT_ID: "vessel_3"
+      HARBOUR_FL_DATA_ROOT: "../data/prepared"
+      HARBOUR_FL_ROLE: "client"
+      HARBOUR_FL_MODEL_PROFILE: "pretrained"
+    resources:
+      - type: "harbour-fl-engine"
+
+  - name: "vessel-coordinator"
+    runner: "pyo3"
+    env:
+      PYO3_AGENT_ID: "vessel-coordinator"
+      PYO3_PYTHONPATH: *native_python_path
+      HARBOUR_FL_CLIENTS: "vessel_1,vessel_2,vessel_3"
+      HARBOUR_FL_DATA_ROOT: "../data/prepared"
+      HARBOUR_FL_ROLE: "coordinator"
+      HARBOUR_FL_MODEL_PROFILE: "pretrained"
+    resources:
+      - type: "harbour-fl-engine"
+
+  - name: "mlflow-bridge"
+    runner: "pyo3"
+    env:
+      MLFLOW_TRACKING_URI: "http://127.0.0.1:5000"
+      PYO3_AGENT_ID: "mlflow-bridge"
+      PYO3_MLFLOW_ARTIFACT_BUCKETS: "vessel-coordinator"
+      PYO3_PYTHONPATH: *native_python_path
+    resources:
+      - type: "pyo3-mlflow"
+
+  - name: "browser-modules"
+    resources:
+      - type: "static"
+      - type: "harbour-fl-client"
+      - type: "harbour-fl-coordinator"
+      - type: "harbour-fl-mlflow"

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "name": "Harbour-FL infrastructure benchmarks",
+  "description": "Run allowlisted resilience, capacity, network, storage, and data-quality experiments.",
+  "adapter": {
+    "command": [
+      ".venv/bin/python",
+      "benchmarking/adapter.py"
+    ],
+    "cwd": "."
+  },
+  "results_dir": "results/controller",
+  "parameters": {
+    "seed": {
+      "type": "integer",
+      "label": "Initial fault timing seed",
+      "default": 17,
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "paired_baseline": {
+      "type": "boolean",
+      "label": "Run a matching healthy baseline",
+      "default": false
+    },
+    "rounds": {
+      "type": "integer",
+      "label": "Federated rounds",
+      "default": 3,
+      "minimum": 1,
+      "maximum": 100
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "label": "Timeout (seconds)",
+      "default": 900,
+      "minimum": 60,
+      "maximum": 14400
+    },
+    "sample_interval_seconds": {
+      "type": "number",
+      "label": "Resource sample interval (seconds)",
+      "default": 2,
+      "minimum": 0.5,
+      "maximum": 30
+    },
+    "repetitions": {
+      "type": "integer",
+      "label": "Experiment repetitions",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 20
+    },
+    "recovery_mode": {
+      "type": "string",
+      "label": "Recovery mode",
+      "default": "observe-only",
+      "choices": [
+        "observe-only",
+        "controller-assisted"
+      ]
+    },
+    "device": {
+      "type": "string",
+      "label": "Kubernetes client device",
+      "default": "cpu",
+      "choices": [
+        "cpu",
+        "cuda"
+      ]
+    },
+    "local_epochs": {
+      "type": "integer",
+      "label": "Local training epochs",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 50
+    },
+    "batch_size": {
+      "type": "integer",
+      "label": "Training batch size",
+      "default": 16,
+      "minimum": 1,
+      "maximum": 256
+    },
+    "torch_threads": {
+      "type": "integer",
+      "label": "PyTorch CPU threads",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 32
+    },
+    "service_probes_enabled": {
+      "type": "boolean",
+      "label": "Measure functional availability and communication RTT",
+      "default": false
+    }
+  },
+  "scenarios_file": "benchmarking/scenarios.json"
+}

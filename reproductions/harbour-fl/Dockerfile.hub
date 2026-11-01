@@ -1,0 +1,10 @@
+# syntax=docker/dockerfile:1
+# External scenario packaging: no Core source checkout is required.
+FROM node:24-bookworm-slim AS browser-deps
+WORKDIR /deps
+RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund onnxruntime-web stats-gl
+
+FROM et-ws-server-core:local
+COPY --from=browser-deps --chown=10001:10001 /deps/node_modules /app/node_modules
+COPY --from=module-path-0 --chown=10001:10001 . /app/module-paths/0/
+COPY --from=module-path-1 --chown=10001:10001 . /app/module-paths/1/

@@ -21,6 +21,9 @@ runners in place of the original infrastructure, and records what changed.
   [split-learning-mit](reproductions/split-learning-mit)
 - [On-Device Training Under 256KB Memory][lin2022]
   (Lin et al., 2022): [tiny-training-mit](reproductions/tiny-training-mit)
+- [Harbour-FL](reproductions/harbour-fl): multimodal federated vessel classification inspired by Correira et al.
+  (2024), with Edge Toolkit orchestration and recovery experiments. See its README for the research references and
+  temporary local Core release requirements.
 
 [vepakomma2018]: https://arxiv.org/pdf/1812.00564
 [lin2022]: https://arxiv.org/pdf/2206.15472

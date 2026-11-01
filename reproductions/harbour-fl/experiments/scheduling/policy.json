@@ -1,0 +1,12 @@
+{
+  "context": "k3d-harbour-fl",
+  "namespace": "et-harbour-fl",
+  "workload_id": "vessel-2",
+  "action_mode": "auto",
+  "rounds": 5,
+  "trigger_after_round": 0,
+  "timeout_seconds": 600,
+  "rollout_timeout_seconds": 180,
+  "required_node_labels": {},
+  "allow_same_node_restart": true
+}
