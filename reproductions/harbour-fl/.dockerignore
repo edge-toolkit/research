@@ -1,0 +1,16 @@
+**
+!modules/**
+!.local-modules/**
+!.local-core-python/**
+
+!src/
+!src/harbour_fl/
+!src/harbour_fl/**
+!models/
+!models/**/
+!models/**/*.json
+!models/**/*.onnx
+models/**/*.pt
+models/**/*.pth
+models/**/*.engine
+models/pretrained/

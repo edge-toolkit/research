@@ -1,0 +1,223 @@
+min_version = "2026.9.0"
+
+[settings]
+exec_auto_install = false
+lockfile = true
+task.run_auto_install = false
+
+[env]
+UV_PYTHON_DOWNLOADS = "never"
+WS_CONNECTION_TIMEOUT = "off"
+
+[env._]
+file = ".env.local"
+
+[tools]
+k3d = "latest"
+kubectl = "latest"
+python = "latest"
+rust = "latest"
+uv = "latest"
+
+[tasks.setup]
+depends = ["setup:data", "setup:deployment", "setup:mlflow-bridge", "setup:python", "setup:weights"]
+description = "Prepare the Harbour-FL project and generated Edge Toolkit deployment"
+
+[tasks."setup:python"]
+depends = ["setup:mlflow-bridge"]
+description = "Create the Python environment used by the pyo3 runners and MLflow server"
+run = """
+uv venv --allow-existing --python "$(mise which python)" .venv
+uv pip install --python .venv -r requirements.txt
+uv pip install --reinstall --python .venv .local-core-python/*.whl
+.venv/bin/python -c 'from edge_toolkit.recovery import Checkpoints, Lifecycle'
+if [ "$(.venv/bin/python -m harbour_fl.vision enabled)" = "1" ]; then
+  uv pip install --python .venv -e '.[detection]'
+  .venv/bin/python -m harbour_fl.vision check
+fi
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks."setup:weights"]
+depends = ["setup:python"]
+description = "Download and verify pinned AudioSet and ImageNet pretrained encoder artifacts"
+run = ".venv/bin/python -m harbour_fl.pretrained_assets"
+
+[tasks."setup:data"]
+description = "Link a prepared Croatia dataset into the project-local ignored data directory"
+run = """
+if [ -z "${HARBOUR_FL_SOURCE_DATA:-}" ]; then
+  echo "Set HARBOUR_FL_SOURCE_DATA to the prepared dataset directory" >&2
+  exit 1
+fi
+/bin/mkdir -p data
+/bin/ln -sfn "$HARBOUR_FL_SOURCE_DATA" data/prepared
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks."setup:mlflow-bridge"]
+description = "Validate and stage the matching local Core release, including the recovery SDK"
+run = """
+python configure_deployment.py core-release "${EDGE_TOOLKIT_RELEASE_DIR:?set EDGE_TOOLKIT_RELEASE_DIR}"
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.generate]
+depends = ["setup:mlflow-bridge", "setup:python"]
+description = "Generate the current Edge Toolkit deployment from scenario.yaml"
+run = """
+"$EDGE_TOOLKIT_RELEASE_DIR/bin/et-cli" generate-deployment --input-file scenario.yaml --output-dir deployment
+.venv/bin/python configure_deployment.py credentials deployment/secrets.env
+.venv/bin/python configure_deployment.py mise deployment/mise.toml
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.generate-k3s]
+depends = ["setup:mlflow-bridge", "setup:python"]
+description = "Generate and adapt the current Edge Toolkit k3s deployment"
+run = """
+.venv/bin/python configure_deployment.py scenario scenario.yaml
+"$EDGE_TOOLKIT_RELEASE_DIR/bin/et-cli" generate-deployment --input-file .scenario-k3s.yaml \
+  --output-dir deployment-k3s --output-type k3s
+.venv/bin/python configure_deployment.py credentials deployment-k3s/secrets.env
+.venv/bin/python configure_deployment.py k3s deployment-k3s/k3s.yaml
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks."setup:deployment"]
+depends = ["generate"]
+description = "Install the released Edge Toolkit server and pyo3 runner"
+run = "mise -C deployment install"
+
+[tasks.mlflow]
+depends = ["setup:python"]
+description = "Run the loopback-only MLflow tracking server and browser UI"
+run = """
+/bin/mkdir -p results
+.venv/bin/python -m mlflow server --host 127.0.0.1 --port 5000 \
+  --backend-store-uri sqlite:///results/mlflow.db --artifacts-destination results/mlflow-artifacts
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.server]
+description = "Run the generated Edge Toolkit Harbour-FL scenario"
+run = "mise -C deployment run generated-scenario"
+
+[tasks."setup:benchmark"]
+depends = ["setup:python"]
+description = "Install the external benchmark adapter's operator-side dependencies"
+run = "uv pip install --python .venv -r requirements-benchmark.txt"
+
+[tasks.benchmark-ui]
+depends = ["setup:benchmark"]
+description = "Open the standalone benchmark UI with the Harbour-FL adapter catalog"
+run = """
+mise -C ../../experiments/reliability-benchmarks run benchmark-ui -- \
+  --catalog ../../reproductions/harbour-fl/benchmark-catalog.json serve
+"""
+
+[tasks.k3d-check]
+depends = ["setup:python"]
+description = "Check Docker and the prepared dataset before creating the local k3d cluster"
+run = """
+command -v docker >/dev/null || { echo "Docker CLI is required" >&2; exit 1; }
+docker info >/dev/null
+test -d data/prepared || { echo "Run mise run setup:data first" >&2; exit 1; }
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.k3d-build]
+depends = ["generate-k3s", "setup:core-images"]
+description = "Build the Harbour-FL hub and dependency-equipped pyo3 runner images"
+run = """
+detection="$(.venv/bin/python -m harbour_fl.vision enabled)"
+docker build --load -t harbour-fl-pyo3:local -f Dockerfile.pyo3 \
+  --build-arg "WITH_DETECTION=$detection" \
+  --build-arg "TORCH_INDEX_URL=${HARBOUR_FL_TORCH_INDEX_URL:-https://download.pytorch.org/whl/cpu}" .
+docker build --load -t et-ws-server-harbour-fl:latest -f Dockerfile.hub \
+  --build-context module-path-0=modules --build-context module-path-1=.local-modules .
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.k3d-create]
+depends = ["k3d-check"]
+description = "Create the harbour-fl k3d cluster with the prepared dataset mounted read-only"
+run = """
+if ! k3d cluster list | grep -Eq '^harbour-fl[[:space:]]'; then
+  dataset="$(python -c 'from pathlib import Path; print(Path("data/prepared").resolve())')"
+  k3d cluster create harbour-fl --servers 1 --agents 0 --port '8080:8080@loadbalancer' \
+    --port '8443:8443@loadbalancer' --volume "$dataset:/var/lib/edge-toolkit/harbour-fl-data@server:0"
+fi
+k3d cluster start harbour-fl
+kubectl config use-context k3d-harbour-fl
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.k3d-import]
+depends = ["k3d-build", "k3d-create"]
+description = "Import the local Harbour-FL images into k3d"
+run = """
+image=et-recovery-supervisor:local
+k3d image import harbour-fl-pyo3:local et-ws-server-harbour-fl:latest "$image" --cluster harbour-fl
+"""
+
+[tasks.k3d-deploy]
+depends = ["k3d-import"]
+description = "Deploy Harbour-FL and wait for the hub, MLflow, and training roles"
+run = """
+kubectl create namespace et-harbour-fl --dry-run=client -o yaml | kubectl apply -f -
+kubectl create secret generic et-harbour-fl-secrets -n et-harbour-fl \
+  --from-env-file=deployment-k3s/secrets.env --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f deployment-k3s/k3s.yaml
+kubectl rollout restart -n et-harbour-fl deployment/ws-server deployment/mlflow deployment/mlflow-bridge \
+  deployment/vessel-1 deployment/vessel-2 deployment/vessel-3 deployment/vessel-coordinator
+kubectl rollout status deployment/ws-server -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/mlflow -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/vessel-1 -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/vessel-2 -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/vessel-3 -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/vessel-coordinator -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/mlflow-bridge -n et-harbour-fl --timeout=5m
+kubectl rollout status deployment/recovery-supervisor -n et-harbour-fl --timeout=5m
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks.k3d-up]
+depends = ["k3d-deploy"]
+description = "Build and deploy the complete Harbour-FL k3d scenario"
+
+[tasks.k3d-status]
+description = "Show the local Harbour-FL Kubernetes workloads"
+run = "kubectl get pods,services,pvc -n et-harbour-fl"
+
+[tasks.k3d-mlflow]
+description = "Forward the k3d MLflow service to http://127.0.0.1:5000"
+run = "kubectl port-forward -n et-harbour-fl service/mlflow 5000:5000"
+
+[tasks.k3d-o2]
+description = "Forward Core's OpenObserve service to http://127.0.0.1:5080"
+run = "kubectl --context k3d-harbour-fl port-forward --address 127.0.0.1 -n et-harbour-fl service/openobserve 5080:5080"
+
+[tasks.k3d-stop]
+description = "Stop the harbour-fl k3d cluster while preserving its state"
+run = "k3d cluster stop harbour-fl"
+
+[tasks.test]
+depends = ["setup:benchmark"]
+description = "Run Harbour-FL, benchmark-adapter, orchestration, and generic-controller unit tests"
+run = """
+.venv/bin/python -m unittest discover -s modules/harbour-fl-engine -p 'test_*.py'
+.venv/bin/python -m unittest discover -s benchmarking -p 'test_*.py'
+.venv/bin/python -m unittest discover -s experiments/scheduling -p 'test_*.py'
+.venv/bin/python -m unittest discover -s ../../experiments/reliability-benchmarks/controllers/tests -p 'test_*.py'
+"""
+shell = "/bin/sh -o errexit -c"
+
+[tasks."setup:core-images"]
+depends = ["setup:mlflow-bridge"]
+description = "Load the matching Core server, runner and recovery supervisor images from the local release"
+run = 'docker image load --input "$EDGE_TOOLKIT_RELEASE_DIR/images/core-runtime.tar"'
+
+[tasks.recovery]
+description = "Inspect the deployed Core recovery supervisor; no research recovery controller is started"
+run = "kubectl --context k3d-harbour-fl logs -n et-harbour-fl deployment/recovery-supervisor --tail=80"

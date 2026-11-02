@@ -1,0 +1,811 @@
+{
+  "reference-training-outage": {
+    "description": "Observe service progress with two clients and verify vessel-3 contributes again after its outage",
+    "rounds": 12,
+    "minimum_clients": 2,
+    "round_timeout_seconds": 30,
+    "timeout_seconds": 1800,
+    "require_participant_recovery": true,
+    "fault": {
+      "type": "temporary_scale_down",
+      "target": "vessel-3",
+      "duration_seconds": 45,
+      "trigger": {
+        "event_kind": "training-started",
+        "workload": "vessel-3",
+        "progress": 1
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "reference-client-stage-restart": {
+    "description": "Seeded selection of training or update-transfer observation before a client restart",
+    "rounds": 12,
+    "timeout_seconds": 1800,
+    "require_participant_recovery": true,
+    "fault": {
+      "type": "delete_pod",
+      "target": "vessel-2",
+      "trigger": {
+        "choices": [
+          {
+            "event_kind": "training-started",
+            "workload": "vessel-2",
+            "progress": 1
+          },
+          {
+            "event_kind": "update-transfer-started",
+            "workload": "vessel-2",
+            "progress": 1
+          }
+        ]
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "checkpoint-recovery-recent": {
+    "description": "Restart after a committed checkpoint and verify unfinished work resumes",
+    "rounds": 12,
+    "timeout_seconds": 1800,
+    "checkpoint_interval": 1,
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "require_unfinished_resume": true,
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "trigger": {
+        "event_kind": "checkpoint-saved",
+        "workload": "vessel-coordinator",
+        "progress": 2
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "checkpoint-recovery-stale": {
+    "description": "Checkpoint every three rounds, interrupt later work and measure retained and repeated progress",
+    "rounds": 12,
+    "timeout_seconds": 1800,
+    "checkpoint_interval": 3,
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "require_unfinished_resume": true,
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "trigger": {
+        "event_kind": "operation-started",
+        "workload": "vessel-coordinator",
+        "progress": 4
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "checkpoint-recovery-precommit": {
+    "description": "Interrupt a five-second pre-commit delay and restore the preceding complete checkpoint",
+    "rounds": 12,
+    "timeout_seconds": 1800,
+    "checkpoint_write_delay_seconds": 5,
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "require_unfinished_resume": true,
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "trigger": {
+        "event_kind": "checkpoint-save-started",
+        "workload": "vessel-coordinator",
+        "progress": 2
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "soak-baseline": {
+    "description": "Sixty-round reference workload for longer-duration performance and checkpoint observations",
+    "rounds": 60,
+    "timeout_seconds": 7200,
+    "fault": {
+      "type": "none"
+    },
+    "model_profile": "pretrained"
+  },
+  "soak-client-outage": {
+    "description": "Sixty-round workload with a one-minute client outage and verified later participation",
+    "rounds": 60,
+    "timeout_seconds": 7200,
+    "minimum_clients": 2,
+    "round_timeout_seconds": 45,
+    "require_participant_recovery": true,
+    "fault": {
+      "type": "temporary_scale_down",
+      "target": "vessel-3",
+      "duration_seconds": 60,
+      "after_round": 2
+    },
+    "model_profile": "pretrained"
+  },
+  "combined-client-network-outage": {
+    "description": "Concurrent vessel-3 outage and vessel-2 degraded connectivity, with verified later contributions",
+    "rounds": 12,
+    "timeout_seconds": 1800,
+    "minimum_clients": 2,
+    "round_timeout_seconds": 60,
+    "require_participant_recovery": true,
+    "fault": {
+      "type": "combined",
+      "after_round": 0,
+      "faults": [
+        {
+          "type": "temporary_scale_down",
+          "target": "vessel-3",
+          "duration_seconds": 45
+        },
+        {
+          "type": "degraded_network",
+          "target": "vessel-2",
+          "duration_seconds": 45,
+          "latency_ms": 200,
+          "jitter_ms": 50,
+          "loss_percent": 2,
+          "rate_kbit": 512
+        }
+      ]
+    },
+    "model_profile": "pretrained"
+  },
+  "client-memory-saturation": {
+    "description": "Ramp vessel-2 RAM occupancy toward 60%, 75% and 90% of a 768 MiB limit, then verify resumed work",
+    "rounds": 12,
+    "round_timeout_seconds": 240,
+    "timeout_seconds": 1200,
+    "require_post_fault_progress": true,
+    "recovery_mode": "observe-only",
+    "fault": {
+      "type": "client_memory_saturation",
+      "target": "vessel-2",
+      "memory_limit_mib": 768,
+      "max_extra_memory_mib": 512,
+      "reserve_mib": 64,
+      "levels": [
+        0.6,
+        0.75,
+        0.9
+      ],
+      "hold_seconds": 10,
+      "after_round": 0
+    },
+    "model_profile": "pretrained"
+  },
+  "client-network-saturation": {
+    "description": "Ramp traffic across a controlled 1024 kbit/s client link, release and verify useful progress",
+    "rounds": 12,
+    "round_timeout_seconds": 240,
+    "timeout_seconds": 1200,
+    "require_post_fault_progress": true,
+    "recovery_mode": "observe-only",
+    "fault": {
+      "type": "client_network_saturation",
+      "target": "vessel-2",
+      "rate_kbit": 1024,
+      "levels": [
+        0.25,
+        0.5,
+        0.85,
+        1.25,
+        1.5
+      ],
+      "hold_seconds": 5,
+      "after_round": 0
+    },
+    "model_profile": "pretrained"
+  },
+  "gpu-baseline": {
+    "description": "One CUDA client and two CPU clients; requires a GPU-capable Kubernetes worker",
+    "device": "cpu",
+    "client_devices": {
+      "vessel-2": "cuda"
+    },
+    "rounds": 5,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "none"
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "gpu-runtime-failure": {
+    "description": "One-shot simulated CUDA runtime failure; Core restarts the client and it retries the round",
+    "device": "cpu",
+    "client_devices": {
+      "vessel-2": "cuda"
+    },
+    "rounds": 5,
+    "round_timeout_seconds": 240,
+    "timeout_seconds": 900,
+    "require_recovery": true,
+    "recovery_mode": "controller-assisted",
+    "fault": {
+      "type": "gpu_failure",
+      "target": "vessel-2",
+      "mode": "runtime_error",
+      "detection_timeout_seconds": 60,
+      "after_round": -1
+    },
+    "model_profile": "pretrained"
+  },
+  "gpu-out-of-memory": {
+    "description": "One-shot simulated CUDA out-of-memory exception without allocating excessive GPU memory",
+    "device": "cpu",
+    "client_devices": {
+      "vessel-2": "cuda"
+    },
+    "rounds": 5,
+    "round_timeout_seconds": 240,
+    "timeout_seconds": 900,
+    "require_recovery": true,
+    "recovery_mode": "controller-assisted",
+    "fault": {
+      "type": "gpu_failure",
+      "target": "vessel-2",
+      "mode": "out_of_memory",
+      "detection_timeout_seconds": 60,
+      "after_round": -1
+    },
+    "model_profile": "pretrained"
+  },
+  "baseline": {
+    "description": "Three-client reference run without injected faults",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "none"
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "client-restart": {
+    "description": "Delete vessel-2 after round 0 and measure reconnection/recovery",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "delete_pod",
+      "target": "vessel-2",
+      "after_round": 0
+    },
+    "require_recovery": true,
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "client-dropout": {
+    "description": "Remove vessel-3 for 15 seconds after round 0",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "temporary_scale_down",
+      "target": "vessel-3",
+      "after_round": 0,
+      "duration_seconds": 15
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "cpu-saturation": {
+    "description": "Run four CPU burners on the k3d node for 60 seconds after round 0",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "cpu_stress",
+      "workers": 4,
+      "after_round": 0,
+      "duration_seconds": 60
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "memory-pressure": {
+    "description": "Allocate and touch 512 MiB of node memory for 30 seconds after round 0",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "memory_pressure",
+      "memory_mib": 512,
+      "after_round": 0,
+      "duration_seconds": 30
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "client-oom": {
+    "description": "Constrain vessel-2 to 96 MiB, detect OOMKilled, restore it, and measure recovery",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "client_oom",
+      "target": "vessel-2",
+      "memory_limit_mib": 96,
+      "after_round": 0,
+      "detection_timeout_seconds": 90
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "dataset-read-latency": {
+    "description": "Add 25 ms to every vessel-2 audio and image read and measure local-training throughput",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "dataset_read_latency",
+      "target": "vessel-2",
+      "delay_ms": 25,
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "audio-noise": {
+    "description": "Use cached features from waveform noise at 10 dB SNR with clean camera inputs",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "audio_noise",
+      "target": "vessel-2",
+      "after_round": -1,
+      "snr_db": 10
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "image-noise": {
+    "description": "Use cached features from Gaussian image noise (0.20) with clean audio inputs",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "image_noise",
+      "target": "vessel-2",
+      "noise_std": 0.2,
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "missing-audio": {
+    "description": "Train vessel-2 with its audio modality zero-masked while retaining camera images",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "missing_modality",
+      "target": "vessel-2",
+      "modality": "audio",
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "missing-image": {
+    "description": "Train vessel-2 with its image modality zero-masked while retaining log-mel audio",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "missing_modality",
+      "target": "vessel-2",
+      "modality": "image",
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "checkpoint-write-failure": {
+    "description": "Reject the coordinator global-checkpoint write for round 1 and verify explicit safe failure",
+    "rounds": 3,
+    "timeout_seconds": 300,
+    "allow_run_failure": true,
+    "expected_failure_message": "injected checkpoint write failure for round 1",
+    "fault": {
+      "type": "checkpoint_write_failure",
+      "target": "vessel-coordinator",
+      "round": 1,
+      "after_round": 0
+    },
+    "recovery_enabled": false,
+    "recovery_mode": "disabled",
+    "parameters": {
+      "recovery_mode": {
+        "type": "string",
+        "label": "Recovery mode",
+        "default": "disabled",
+        "choices": [
+          "disabled"
+        ]
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "mlflow-storage-outage": {
+    "description": "Stop MLflow for 15 seconds and verify ingestion recovery without restarting its bridge",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "mlflow_outage",
+      "target": "mlflow",
+      "duration_seconds": 15,
+      "after_round": 0
+    },
+    "recovery_mode": "observe-only",
+    "require_tracking_recovery": true,
+    "model_profile": "pretrained"
+  },
+  "network-latency": {
+    "description": "Add 250 ms latency with 50 ms jitter to vessel-2 for 30 seconds",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "network_latency",
+      "target": "vessel-2",
+      "after_round": 0,
+      "duration_seconds": 30,
+      "latency_ms": 250,
+      "jitter_ms": 50
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "network-bandwidth": {
+    "description": "Limit vessel-2 egress to 256 kbit/s for 30 seconds",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "network_bandwidth",
+      "target": "vessel-2",
+      "after_round": 0,
+      "duration_seconds": 30,
+      "rate_kbit": 256
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "network-loss": {
+    "description": "Apply 10 percent packet loss to vessel-2 for 30 seconds",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "network_loss",
+      "target": "vessel-2",
+      "after_round": 0,
+      "duration_seconds": 30,
+      "loss_percent": 10
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "network-partition": {
+    "description": "Block all vessel-3 egress for 15 seconds",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "network_partition",
+      "target": "vessel-3",
+      "after_round": 0,
+      "duration_seconds": 15
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "degraded-network": {
+    "description": "Combine 200 ms latency, 50 ms jitter, 5 percent loss, and a 512 kbit/s limit on vessel-2",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "degraded_network",
+      "target": "vessel-2",
+      "after_round": 0,
+      "duration_seconds": 30,
+      "latency_ms": 200,
+      "jitter_ms": 50,
+      "loss_percent": 5,
+      "rate_kbit": 512
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "ws-server-restart": {
+    "description": "Restart the hub; evaluate application/Kubernetes recovery without a Core observer-session claim",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "rollout_restart",
+      "target": "ws-server",
+      "after_round": 0
+    },
+    "recovery_enabled": false,
+    "recovery_mode": "disabled",
+    "parameters": {
+      "recovery_mode": {
+        "type": "string",
+        "label": "Recovery mode",
+        "default": "disabled",
+        "choices": [
+          "disabled"
+        ]
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "coordinator-restart": {
+    "description": "Restart the coordinator, restore committed training state, and verify continued progress",
+    "rounds": 5,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "after_round": 0
+    },
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "adaptive-missing-audio": {
+    "description": "Train with noise and modality-dropout augmentation; evaluate the specified input condition",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "adaptation": true,
+    "fault": {
+      "type": "missing_modality",
+      "target": "vessel-2",
+      "modality": "audio",
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "adaptive-audio-noise": {
+    "description": "Train with noise and modality-dropout augmentation; evaluate the specified input condition",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "adaptation": true,
+    "fault": {
+      "type": "audio_noise",
+      "target": "vessel-2",
+      "after_round": -1,
+      "snr_db": 10
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "adaptive-missing-image": {
+    "description": "Train with noise and modality-dropout augmentation; evaluate the specified input condition",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "adaptation": true,
+    "fault": {
+      "type": "missing_modality",
+      "target": "vessel-2",
+      "modality": "image",
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "adaptive-image-noise": {
+    "description": "Train with noise and modality-dropout augmentation; evaluate the specified input condition",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "adaptation": true,
+    "fault": {
+      "type": "image_noise",
+      "target": "vessel-2",
+      "noise_std": 0.2,
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "recovery-slo": {
+    "description": "Coordinator restart/resume with illustrative recovery objectives; tune targets for the hardware",
+    "rounds": 5,
+    "timeout_seconds": 900,
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "slos": {
+      "recovery_success_ratio": {
+        "min": 1
+      },
+      "mttr_seconds": {
+        "max": 180
+      },
+      "checkpoint_load_mean_seconds": {
+        "max": 30
+      }
+    },
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "after_round": 0
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "invalid-client-update": {
+    "description": "Reject nonfinite model updates and continue with a configured two-client quorum",
+    "rounds": 3,
+    "minimum_clients": 2,
+    "round_timeout_seconds": 10,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "invalid_update",
+      "target": "vessel-2",
+      "after_round": -1
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "quorum-client-outage": {
+    "description": "Continue with a bounded two-client quorum during a temporary client outage",
+    "rounds": 5,
+    "minimum_clients": 2,
+    "round_timeout_seconds": 8,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "temporary_scale_down",
+      "target": "vessel-3",
+      "duration_seconds": 25,
+      "after_round": 0
+    },
+    "recovery_mode": "observe-only",
+    "model_profile": "pretrained"
+  },
+  "recovery-slo-assisted": {
+    "description": "Coordinator recovery with bounded Core-supervisor assistance and recorded interventions",
+    "rounds": 5,
+    "timeout_seconds": 900,
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "slos": {
+      "recovery_success_ratio": {
+        "min": 1
+      },
+      "mttr_seconds": {
+        "max": 180
+      },
+      "checkpoint_load_mean_seconds": {
+        "max": 30
+      }
+    },
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "after_round": 0
+    },
+    "recovery_mode": "controller-assisted",
+    "model_profile": "pretrained"
+  },
+  "mlflow-storage-outage-assisted": {
+    "description": "Restore MLflow and explicitly restart its bridge; report benchmark-assisted ingestion recovery",
+    "rounds": 3,
+    "timeout_seconds": 900,
+    "fault": {
+      "type": "mlflow_outage",
+      "target": "mlflow",
+      "duration_seconds": 15,
+      "after_round": 0,
+      "restart_bridge": true
+    },
+    "recovery_mode": "controller-assisted",
+    "require_tracking_recovery": true,
+    "parameters": {
+      "recovery_mode": {
+        "type": "string",
+        "label": "Recovery mode",
+        "default": "controller-assisted",
+        "choices": [
+          "controller-assisted"
+        ]
+      }
+    },
+    "model_profile": "pretrained"
+  },
+  "representative-baseline": {
+    "model_profile": "pretrained",
+    "rounds": 20,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 14400,
+    "reference": {
+      "id": "harbour-pretrained-head-v1",
+      "cache_condition": "operator-recorded; inspect first and later rounds separately"
+    },
+    "description": "Frozen pretrained feature inputs, full prepared partitions and federated head updates",
+    "fault": {
+      "type": "none"
+    }
+  },
+  "representative-training-outage": {
+    "model_profile": "pretrained",
+    "rounds": 20,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 14400,
+    "reference": {
+      "id": "harbour-pretrained-head-v1",
+      "cache_condition": "operator-recorded; inspect first and later rounds separately"
+    },
+    "description": "Continue training with two clients during a one-minute vessel-3 outage, then verify its return",
+    "minimum_clients": 2,
+    "require_participant_recovery": true,
+    "fault": {
+      "type": "temporary_scale_down",
+      "target": "vessel-3",
+      "duration_seconds": 60,
+      "trigger": {
+        "event_kind": "training-started",
+        "workload": "vessel-3",
+        "progress": 1
+      }
+    }
+  },
+  "representative-checkpoint-recovery": {
+    "model_profile": "pretrained",
+    "rounds": 20,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 14400,
+    "reference": {
+      "id": "harbour-pretrained-head-v1",
+      "cache_condition": "operator-recorded; inspect first and later rounds separately"
+    },
+    "description": "Restart the coordinator from a three-round checkpoint and verify unfinished training resumes",
+    "checkpoint_interval": 3,
+    "require_recovery": true,
+    "require_checkpoint_restore": true,
+    "require_unfinished_resume": true,
+    "recovery_mode": "controller-assisted",
+    "fault": {
+      "type": "rollout_restart",
+      "target": "vessel-coordinator",
+      "trigger": {
+        "event_kind": "operation-started",
+        "workload": "vessel-coordinator",
+        "progress": 4
+      }
+    }
+  },
+  "representative-network-degradation": {
+    "model_profile": "pretrained",
+    "rounds": 20,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 14400,
+    "reference": {
+      "id": "harbour-pretrained-head-v1",
+      "cache_condition": "operator-recorded; inspect first and later rounds separately"
+    },
+    "description": "Measure fusion-head update transfers over a constrained client link with latency and loss",
+    "require_post_fault_progress": true,
+    "fault": {
+      "type": "degraded_network",
+      "target": "vessel-2",
+      "duration_seconds": 60,
+      "latency_ms": 200,
+      "jitter_ms": 50,
+      "loss_percent": 2,
+      "rate_kbit": 1024,
+      "trigger": {
+        "event_kind": "update-transfer-started",
+        "workload": "vessel-2",
+        "progress": 1
+      }
+    }
+  }
+}

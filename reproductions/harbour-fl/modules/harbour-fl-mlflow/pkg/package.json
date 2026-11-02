@@ -1,0 +1,8 @@
+{
+  "name": "@edge-toolkit/harbour-fl-mlflow",
+  "type": "module",
+  "description": "Harbour FL — open MLflow dashboard",
+  "version": "0.1.0",
+  "license": "Apache-2.0 OR MIT",
+  "main": "et_ws_harbour_fl_mlflow.js"
+}

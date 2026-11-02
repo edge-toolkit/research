@@ -1,0 +1,27 @@
+{
+  "scheduling-baseline": {
+    "description": "Run Harbour-FL without a scheduling action to establish orchestration overhead",
+    "action_mode": "baseline"
+  },
+  "same-node-recovery": {
+    "description": "Force a controlled vessel-2 restart and verify that FL resumes",
+    "action_mode": "restart"
+  },
+  "capacity-rebalance": {
+    "description": "Select the least-allocated eligible alternate node, with an explicit same-node fallback",
+    "action_mode": "auto"
+  },
+  "multi-node-relocation": {
+    "description": "Require vessel-2 relocation to a distinct eligible node; skip when the cluster has no alternative",
+    "action_mode": "relocate",
+    "allow_same_node_restart": false
+  },
+  "constraint-rejection": {
+    "description": "Verify safe refusal when placement constraints leave no eligible target",
+    "action_mode": "expect-no-target",
+    "allow_same_node_restart": false,
+    "required_node_labels": {
+      "edge-toolkit.io/negative-test-eligible": "true"
+    }
+  }
+}

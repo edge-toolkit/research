@@ -1,0 +1,53 @@
+{
+  "audio_pretraining": "AudioSet; not fine-tuned for vessel types",
+  "efficientat_repository": "https://raw.githubusercontent.com/fschmid56/EfficientAT/",
+  "efficientat_revision": "a425fdce92572e602a1d5634799bd9f1f2efa806",
+  "files": {
+    "EfficientAT-LICENSE": {
+      "sha256": "7a45b1641304427db80df436cab61c04ddb634d97e9a8b7a93de41db940fa8b5",
+      "url": "https://raw.githubusercontent.com/fschmid56/EfficientAT/a425fdce92572e602a1d5634799bd9f1f2efa806/LICENSE"
+    },
+    "efficientat/__init__.py": {
+      "origin": "Harbour-FL package glue",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "efficientat/attention_pooling.py": {
+      "modification": "package-relative imports only",
+      "sha256": "607f7b5e5340eeb6b5f0b774982e958b97cc1855706799925ab26d034d9d8d8e",
+      "upstream_path": "models/mn/attention_pooling.py",
+      "upstream_sha256": "52b6903d5d62b3639ec609166cd08c36342588bd7988fe41ac72f3cfc496ce4f"
+    },
+    "efficientat/block_types.py": {
+      "modification": "package-relative imports only",
+      "sha256": "881cc7c0a49126696b820af19f18c4007a461358596955c058b1ee5366307c1b",
+      "upstream_path": "models/mn/block_types.py",
+      "upstream_sha256": "e13ae49b6885217d6936d9203567aad1b6cb2f1229979d6d1ae77b836f3d1344"
+    },
+    "efficientat/model.py": {
+      "modification": "package-relative imports only",
+      "sha256": "35b68bcb8a8973e348b21278cf659ee698d408168e579cbc76fd5d1c0702ad2f",
+      "upstream_path": "models/mn/model.py",
+      "upstream_sha256": "471b2c482248d782b93881c5e834c0edc23c1e7e6f42a437e4c096b9d8ed4c3e"
+    },
+    "efficientat/utils.py": {
+      "modification": "package-relative imports only",
+      "sha256": "deb551bd854f90ca1473d731de1d7586af9449fc95fd2432f4cc9d0ccd38c11b",
+      "upstream_path": "models/mn/utils.py",
+      "upstream_sha256": "deb551bd854f90ca1473d731de1d7586af9449fc95fd2432f4cc9d0ccd38c11b"
+    },
+    "efficientat/width.py": {
+      "origin": "Harbour-FL package glue",
+      "sha256": "3f6929b444d6d52214ebd274f1072387f6d81e89a2ff1cdb936ac18afa0d4f3d"
+    },
+    "mn10_as.pt": {
+      "sha256": "0bd7dc2443af498c289a2e739f02ebb515d6aa3fd3ab9db539c86123ae368a4e",
+      "url": "https://github.com/fschmid56/EfficientAT/releases/download/v0.0.1/mn10_as_mAP_471.pt"
+    },
+    "mobilenet_v3_large.pth": {
+      "sha256": "5c1a416349c4cf298f2a6a5e2600ed0ee55e604713578f5e74e6bc8bcaef7997",
+      "url": "https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth"
+    }
+  },
+  "image_pretraining": "ImageNet-1K V2; not fine-tuned for vessel types",
+  "schema": 1
+}
