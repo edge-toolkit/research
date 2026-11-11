@@ -9,9 +9,12 @@ paths = [
   '''(^|/)\.venv/''',
   '''(^|/)\.zig-cache/''',
   '''(^|/)node_modules/''',
+  '''(^|/)target/''',
   '''(^|/)vendor/''',
   # Local benchmark reports and collected service logs are gitignored.
   '''^experiments/reliability-benchmarks/results/''',
+  # The gpu-fingerprint serve tasks generate a self-signed cert.pem/key.pem, which is gitignored.
+  '''^original/gpu-fingerprint/(cert|key)\.pem$''',
   '''^reproductions/[^/]+/(cert|key)\.pem$''',
   '''^reproductions/[^/]+/(deployment|deployment-k3s|deployment-secrets)/key\.pem$''',
   '''^reproductions/[^/]+/(deployment|deployment-k3s|deployment-secrets)/secrets\.env$''',

@@ -1,0 +1,90 @@
+# Probes ported from the et-gpu-probe crate; inputs are exact f32 bit patterns. See README.md.
+# The device registry is in registry.yaml.
+inputs:
+  names: ["ulpBase", "negatedSquare", "big", "one", "angle", "three", "tiny", "oneHalf"]
+  bits: ["3f800800", "bf801000", "4b800000", "3f800000", "3dcccccd", "40400000", "00800000", "3f000000"]
+  notes: "1+2^-12; -(1+2^-11); 2^24; 1; 0.1; 3; 2^-126; 0.5"
+probes:
+  - name: multiply_add
+    wgsl: "ulpBase * ulpBase + negatedSquare"
+    glsl: "ulpBase * ulpBase + negatedSquare"
+  # WebGPU only: GLSL ES 3.00 (WebGL 2) has no fma builtin, so this probe has no glsl form and is recorded as
+  # ???????? on WebGL 2. Nothing is lost there -- multiply_add already captures whether the compiler fuses a*b+c.
+  - name: fma
+    wgsl: "fma(ulpBase, ulpBase, negatedSquare)"
+  - name: swamped_sum
+    wgsl: "sum - big"
+    glsl: "sum - big"
+  - name: divide
+    wgsl: "one / three"
+    glsl: "one / three"
+  - name: subnormal_product
+    wgsl: "tiny * oneHalf"
+    glsl: "tiny * oneHalf"
+  - name: sqrt
+    wgsl: "sqrt(three)"
+    glsl: "sqrt(three)"
+  - name: inverse_sqrt
+    wgsl: "inverseSqrt(three)"
+    glsl: "inversesqrt(three)"
+  - name: sin
+    wgsl: "sin(angle)"
+    glsl: "sin(angle)"
+  - name: cos
+    wgsl: "cos(angle)"
+    glsl: "cos(angle)"
+  - name: tan
+    wgsl: "tan(angle)"
+    glsl: "tan(angle)"
+  - name: exp
+    wgsl: "exp(angle)"
+    glsl: "exp(angle)"
+  - name: log
+    wgsl: "log(three)"
+    glsl: "log(three)"
+  - name: pow
+    wgsl: "pow(three, angle)"
+    glsl: "pow(three, angle)"
+  - name: atan2
+    wgsl: "atan2(angle, three)"
+    glsl: "atan(angle, three)"
+  - name: tanh
+    wgsl: "tanh(angle)"
+    glsl: "tanh(angle)"
+  - name: dot
+    wgsl: "dot(vec4<f32>(big, one, one, -big), vec4<f32>(one, one, one, one))"
+    glsl: "dot(vec4(big, one, one, -big), vec4(one, one, one, one))"
+reference: [
+  "00000000",
+  "33800000",
+  "00000000",
+  "3eaaaaab",
+  "00400000",
+  "3fddb3d7",
+  "3f13cd3a",
+  "3dcc7577",
+  "3f7eb898",
+  "3dcd7c44",
+  "3f8d763e",
+  "3f8c9f54",
+  "3f8edd20",
+  "3d087b99",
+  "3dcc1ebc",
+  "00000000",
+]
+choices:
+  multiply_add:
+    - ["00000000", "rounded_twice"]
+    - ["33800000", "fused"]
+  fma:
+    - ["00000000", "rounded_twice"]
+    - ["33800000", "fused"]
+  swamped_sum:
+    - ["00000000", "in_order"]
+    - ["40800000", "reassociated"]
+  subnormal_product:
+    - ["00400000", "kept"]
+    - ["00000000", "flushed"]
+  dot:
+    - ["00000000", "in_order"]
+    - ["40000000", "reassociated"]

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Numeric GPU Fingerprint</title>
+    <style>
+    :root {
+      color-scheme: light dark;
+      --dev: #b23;
+      --ok: #2a7;
+      --line: #8884;
+    }
+    body {
+      font: 15px/1.5 system-ui, sans-serif;
+      max-width: 60rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    h1 {
+      font-size: 1.4rem;
+    }
+    p.lead {
+      color: #666;
+    }
+    button {
+      font: inherit;
+      padding: 0.4rem 0.9rem;
+      margin: 0 0.4rem 0.4rem 0;
+      cursor: pointer;
+    }
+    .meta {
+      font-size: 0.85rem;
+      color: #777;
+      margin: 0.3rem 0;
+    }
+    .meta.ok {
+      color: var(--ok);
+    }
+    .meta.error, p.error {
+      color: var(--dev);
+    }
+    .cols {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-top: 1rem;
+    }
+    .cols > section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0.4rem 1rem 1rem;
+    }
+    .iface-badge {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.05rem 0.4rem;
+      margin-right: 0.45rem;
+      vertical-align: middle;
+    }
+    .banner {
+      border: 2px solid var(--line);
+      border-radius: 8px;
+      padding: 0.5rem 0.8rem;
+      margin: 1rem 0 0.4rem;
+      font-weight: 600;
+    }
+    .banner.new {
+      border-color: var(--dev);
+      color: var(--dev);
+    }
+    .banner.known {
+      border-color: var(--ok);
+    }
+    .headline {
+      margin: 0.2rem 0;
+    }
+    .headline .hl-iface {
+      color: #888;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-right: 0.5rem;
+    }
+    .headline .hl-match {
+      font-weight: 700;
+    }
+    .headline .hl-absent {
+      font-weight: 700;
+      color: var(--dev);
+    }
+    details.result-details > summary {
+      cursor: pointer;
+      color: #888;
+      font-size: 0.82rem;
+      margin: 0.2rem 0;
+    }
+    .summary .fp .v, pre.code {
+      overflow-wrap: anywhere;
+      word-break: break-all;
+    }
+    h2 {
+      font-size: 1.05rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.2rem;
+    }
+    h3 {
+      font-size: 0.92rem;
+      margin: 1.1rem 0 0.2rem;
+    }
+    .summary div {
+      margin: 0.1rem 0;
+      font-size: 0.9rem;
+    }
+    .summary .k {
+      color: #888;
+    }
+    .summary .v.match {
+      font-weight: 600;
+    }
+    .summary .fp {
+      margin-top: 0.4rem;
+    }
+    .mono {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 0.6rem;
+      width: 100%;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.15rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.82rem;
+    }
+    tr.dev td {
+      color: var(--dev);
+    }
+    tr.refused td {
+      color: #999;
+      font-style: italic;
+    }
+    .summary .registry .v.match {
+      font-weight: 700;
+    }
+    .summary .registry .v.absent {
+      color: var(--dev);
+      font-weight: 600;
+    }
+    .addentry {
+      margin-top: 0.8rem;
+    }
+    .addentry .k {
+      color: #888;
+      font-size: 0.82rem;
+      margin-bottom: 0.3rem;
+    }
+    pre.code {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #8881;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.5rem;
+      margin: 0;
+    }
+    button.copy {
+      margin-top: 0.4rem;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.6rem;
+    }
+    details.debug {
+      margin-top: 0.6rem;
+    }
+    details.debug summary {
+      cursor: pointer;
+      color: #888;
+      font-size: 0.82rem;
+    }
+    details.debug pre.code {
+      margin-top: 0.3rem;
+      white-space: pre-wrap;
+    }
+    .labelin {
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.25rem 0.4rem;
+      width: min(30rem, 100%);
+      box-sizing: border-box;
+    }
+    .submitrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.3rem 0 0.5rem;
+    }
+    button.submit {
+      font-size: 0.85rem;
+      padding: 0.3rem 0.8rem;
+    }
+    .submitstatus {
+      font-size: 0.82rem;
+      color: #777;
+    }
+    .timing {
+      margin-top: 0.6rem;
+      font-size: 0.85rem;
+    }
+    .timing button.copy {
+      margin-left: 0.5rem;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Numeric GPU Fingerprint</h1>
+    <p class="lead">
+      Puts a fixed set of floating-point expressions to this device's GPU, through WebGPU compute shaders and through
+      WebGL&nbsp;2 and WebGL&nbsp;1 fragment shaders, reads back the raw bits, and compares them with the correctly
+      rounded answer. The sequence of results is a signature of the GPU, driver and interface. It is read from the GPU's
+      numerical output, not from any name the browser reports, and it is not a canvas read. Each of the three is run in
+      two modes, <strong>split</strong> (every expression in a shader of its own) and <strong>combined</strong>
+      (all of them in one shader), because a compiler can give an expression different bits depending on the code around
+      it; the card says when the two differ. For comparison, two classic
+      <strong>canvas&nbsp;2D</strong> fingerprints are taken as well, this page's own and the BrowserLeaks canvas test,
+      each with its own timing, and the page records when a browser blocks any of the four interfaces.
+    </p>
+
+    <p class="meta" id="env">checking environment...</p>
+    <p class="meta" id="refcheck">checking reference...</p>
+    <p class="meta">
+      <label><input type="checkbox" id="private-window"> This is a private window</label>
+      <span id="private-note">(checking...)</span>
+      A private window's results are matched and submitted separately from a normal window's.
+    </p>
+
+    <p>
+      <button id="run-again">Run again</button>
+      <span class="meta"
+      >Runs automatically on load. Run again to time a repeat run. A re-run within one visit cannot show noise that a
+        browser keys to the session, because that noise is the same on every read; the visit history below can.</span>
+    </p>
+    <p class="meta" id="history"></p>
+
+    <p class="banner" id="status-summary">
+      Testing four interfaces: WebGPU, WebGL&nbsp;2, WebGL&nbsp;1 and Canvas&nbsp;2D...
+    </p>
+    <p class="meta">
+      This device is tested through <strong>four</strong> interfaces, shown as the four cards below. If you are
+      collecting signatures, please submit <strong>all four</strong> -- a device often has a different signature on
+      each, and if the browser blocks one, recording that is useful too. WebGL&nbsp;1 is here for browsers that offer it
+      but not WebGL&nbsp;2 or WebGPU, such as the Tor Browser at its default level.
+    </p>
+
+    <div class="cols">
+      <section>
+        <h2><span class="iface-badge">Interface 1 of 4</span>WebGPU</h2>
+        <div id="webgpu-out" class="meta">not run yet</div>
+      </section>
+      <section>
+        <h2><span class="iface-badge">Interface 2 of 4</span>WebGL 2</h2>
+        <div id="webgl2-out" class="meta">not run yet</div>
+      </section>
+      <section>
+        <h2><span class="iface-badge">Interface 3 of 4</span>WebGL 1</h2>
+        <div id="webgl1-out" class="meta">not run yet</div>
+      </section>
+      <section>
+        <h2><span class="iface-badge">Interface 4 of 4</span>Canvas 2D (for comparison)</h2>
+        <div id="canvas-out" class="meta">not run yet</div>
+      </section>
+    </div>
+
+    <p class="meta" id="locallink"></p>
+
+    <script>
+    // A script that is blocked or cannot be fetched leaves the page at "checking" for ever, so say what happened.
+    function scriptFailed(what) {
+      const node = document.getElementById("status-summary");
+      node.className = "banner new";
+      node.textContent = `Could not load ${what}, so nothing was run. ` +
+        "A content blocker or an unreachable CDN is the usual cause.";
+    }
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"
+      onerror="scriptFailed('the YAML parser (js-yaml, from cdn.jsdelivr.net)')"
+    ></script>
+    <!--
+      The script must not be called fingerprint.js: the EasyPrivacy filter list blocks any script of that name on
+      every site, so a browser with a content blocker (LibreWolf ships uBlock Origin) never requests it and the
+      page does nothing.
+    -->
+    <script
+      type="module"
+      src="./probe.js"
+      onerror="scriptFailed('the page script (probe.js) or a library it imports from cdn.jsdelivr.net')"
+    ></script>
+  </body>
+</html>
