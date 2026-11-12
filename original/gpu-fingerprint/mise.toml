@@ -1,0 +1,37 @@
+# Commands to run the GPU fingerprint server (see server.py and README.md) and to analyse its registry.
+# The server serves the tool and accepts new signatures by POST to /register, appending them to registry.yaml.
+# Every serve task uses HTTPS: WebGPU needs a secure context, and browsers treat any non-localhost HTTP origin as
+# insecure, so plain HTTP would silently disable the WebGPU probe on every device except this one.
+
+[tasks.analyse]
+description = "Print the figures derived from registry.yaml: deviations, pairwise differences, separating probes"
+run = "python3 analyse_registry.py"
+
+[tasks.cert]
+description = "Generate a self-signed TLS cert (cert.pem/key.pem) for this machine's LAN IP, localhost and nip.io host"
+run = '''
+IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)"
+NIP="$(echo "$IP" | tr . -).nip.io"
+san() { openssl x509 -in cert.pem -noout -ext subjectAltName 2>/dev/null; }
+if [ -f cert.pem ] && [ -f key.pem ] && san | grep -qF "IP Address:${IP}"; then
+  echo "cert already covers ${IP}"
+  exit 0
+fi
+SAN="subjectAltName=IP:${IP},IP:127.0.0.1,DNS:localhost,DNS:${NIP}"
+echo "generating self-signed cert for ${IP} and ${NIP}"
+openssl req -x509 -newkey rsa:2048 -nodes -days 365 -keyout key.pem -out cert.pem -subj "/CN=${IP}" -addext "${SAN}"
+'''
+
+[tasks.serve]
+depends = ["cert"]
+description = "Serve over HTTPS on localhost:8443"
+run = "python3 server.py --bind 127.0.0.1 --port 8443 --cert cert.pem --key key.pem"
+
+[tasks.serve-lan]
+depends = ["cert"]
+description = "Serve over HTTPS on the LAN (0.0.0.0:8443), reachable by the IP or the matching nip.io host"
+run = '''
+IP="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo 127.0.0.1)"
+NIP="$(echo "$IP" | tr . -).nip.io"
+python3 server.py --bind 0.0.0.0 --port 8443 --cert cert.pem --key key.pem --public-host "$NIP"
+'''

@@ -1,12 +1,30 @@
 {
-  "json": {},
+  "json": {
+    "lineWidth": 120
+  },
   "markdown": {
     "lineWidth": 120
   },
-  "yaml": {},
+  "yaml": {
+    "printWidth": 120
+  },
+  "malva": {
+    "printWidth": 120
+  },
+  "markup": {
+    "printWidth": 120
+  },
+  "typescript": {
+    "lineWidth": 120,
+    "arrowFunction.useParentheses": "force",
+    "binaryExpression.operatorPosition": "sameLine",
+    "memberExpression.linePerExpression": true
+  },
   "excludes": [
     "**/node_modules",
     "**/.venv",
+    "**/pkg/",
+    "original/gpu-fingerprint/registry.yaml",
     "reproductions/*/upstream",
     "reproductions/*/deployment",
     "reproductions/tiny-training-mit/modules/zig-te-train1/.pixi",
@@ -20,8 +38,11 @@
     "reproductions/tiny-training-mit/modules/zig-te-train1/pkg/demo/sample-pack"
   ],
   "plugins": [
+    "https://plugins.dprint.dev/g-plane/malva-v0.15.2.wasm",
+    "https://plugins.dprint.dev/g-plane/markup_fmt-v0.27.0.wasm",
     "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
     "https://plugins.dprint.dev/json-0.21.3.wasm",
-    "https://plugins.dprint.dev/markdown-0.21.1.wasm"
+    "https://plugins.dprint.dev/markdown-0.21.1.wasm",
+    "https://plugins.dprint.dev/typescript-0.95.15.wasm"
   ]
 }

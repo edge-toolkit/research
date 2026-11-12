@@ -93,11 +93,11 @@ git -C reproductions/split-learning-mit/upstream clean -d -X -f ${dry_run:+-n} -
 usage = 'flag "-n --dry-run" help="List what would be removed without removing it"'
 
 [tasks.dprint-check]
-description = "Check Markdown, JSON and YAML formatting (dprint)"
+description = "Check Markdown, JSON, YAML, HTML, CSS and JS formatting (dprint)"
 run = "dprint check"
 
 [tasks.dprint-fmt]
-description = "Format Markdown, JSON and YAML (dprint)"
+description = "Format Markdown, JSON, YAML, HTML, CSS and JS (dprint)"
 run = "dprint fmt"
 
 [tasks.editorconfig-check]
