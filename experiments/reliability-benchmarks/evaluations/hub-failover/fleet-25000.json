@@ -1,0 +1,12 @@
+{
+  "scenario": "fleet-25000",
+  "fleet_size": 25000,
+  "repetitions": 1,
+  "heartbeat_seconds": 5,
+  "warmup_seconds": 30,
+  "registration_seconds": 900,
+  "recovery_seconds": 300,
+  "registration_concurrency": 100,
+  "source_port_base": 1024,
+  "source_port_limit": 32768
+}

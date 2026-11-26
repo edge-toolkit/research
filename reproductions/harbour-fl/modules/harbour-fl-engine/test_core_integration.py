@@ -13,11 +13,14 @@ class Storage:
     def __init__(self):
         self.values = {}
         self.fail_pointer = False
+        self.fail_payload = False
 
     def put(self, name, value):
         """Store checkpoint bytes while optionally failing the latest-pointer commit."""
         if self.fail_pointer and name.endswith("latest.json"):
             raise OSError("injected pointer write failure")
+        if self.fail_payload and not name.endswith("latest.json"):
+            raise OSError("injected payload write failure")
         self.values[name] = value
 
     def get(self, agent_id, name):
@@ -28,6 +31,31 @@ class Storage:
 
 
 class CoreIntegrationTests(unittest.TestCase):
+    def test_invalid_checkpoints_and_failed_writes_preserve_safe_behaviour(self):
+        from edge_toolkit.recovery import Checkpoints
+
+        for kind in ("missing", "corrupt", "malformed", "oversized", "pointer-write", "payload-write"):
+            with self.subTest(kind=kind):
+                storage = Storage()
+                checkpoints = Checkpoints(storage, "worker", "probe", max_bytes=64)
+                checkpoints.save(b"first", 1)
+                pointer = json.loads(storage.values["probe-latest.json"])
+                if kind.endswith("write"):
+                    storage.fail_pointer = kind == "pointer-write"
+                    storage.fail_payload = kind == "payload-write"
+                    with self.assertRaises(OSError):
+                        checkpoints.save(b"second", 2)
+                    self.assertEqual(checkpoints.load(), (b"first", 1))
+                else:
+                    if kind == "missing":
+                        del storage.values[pointer["filename"]]
+                    elif kind == "malformed":
+                        storage.values["probe-latest.json"] = b"not-json"
+                    else:
+                        storage.values[pointer["filename"]] = b"corrupt" if kind == "corrupt" else b"x" * 65
+                    with self.assertRaises((ValueError, OSError)):
+                        checkpoints.load()
+
     def test_interrupted_precommit_keeps_previous_checkpoint(self):
         from harbour_fl.runtime import VesselRuntime
 

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "Core hub failover",
+  "description": "Registered, heartbeating fleet; shared NATS/storage; primary loss and alternate-hub verification.",
+  "adapter": { "command": ["uv", "run", "--project", ".", "python", "study.py", "adapter"], "cwd": "." },
+  "parameters": {
+    "fleet_size": { "type": "integer", "default": 1000, "minimum": 1, "maximum": 25000 },
+    "repetitions": { "type": "integer", "default": 3, "minimum": 1, "maximum": 20 }
+  },
+  "scenarios": {
+    "primary-loss": {
+      "description": "Pause primary after a verified healthy fleet, then verify useful work on standby."
+    }
+  }
+}

@@ -1,0 +1,10 @@
+[tools]
+python = "latest"
+uv = "latest"
+
+[tasks.hub-failover]
+description = "Run the Core hub failover study (append check, smoke, run, or package)"
+run = "uv run --python python --project . python study.py"
+
+[tasks.test]
+run = "uv run --python python --project . python -m unittest discover -s tests"

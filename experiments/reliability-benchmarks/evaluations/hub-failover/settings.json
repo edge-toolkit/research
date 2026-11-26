@@ -1,0 +1,16 @@
+{
+  "fleet_size": 1000,
+  "heartbeat_seconds": 5,
+  "warmup_seconds": 30,
+  "recovery_seconds": 120,
+  "repetitions": 3,
+  "registration_seconds": 600,
+  "probe_seconds": 0.2,
+  "port_base": 18180,
+  "hub_cpus": 2,
+  "hub_memory": "2g",
+  "artifact_bytes": 1048576,
+  "nats_image": "nats:2.15.1-alpine",
+  "storage_image": "rustfs/rustfs:1.0.0-beta.12",
+  "gateway_image": "haproxy:3.2-alpine"
+}

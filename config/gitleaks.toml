@@ -11,10 +11,12 @@ paths = [
   '''(^|/)node_modules/''',
   '''(^|/)vendor/''',
   # Local benchmark reports and collected service logs are gitignored.
+  '''^experiments/reliability-benchmarks/evaluations/hub-(failover|network)/(results|\.runtime|packages|\.cache)/''',
   '''^experiments/reliability-benchmarks/results/''',
   '''^reproductions/[^/]+/(cert|key)\.pem$''',
   '''^reproductions/[^/]+/(deployment|deployment-k3s|deployment-secrets)/key\.pem$''',
   '''^reproductions/[^/]+/(deployment|deployment-k3s|deployment-secrets)/secrets\.env$''',
   '''^reproductions/[^/]+/deployment/storage/''',
   '''^reproductions/[^/]+/upstream/''',
+  '''^reproductions/harbour-fl/benchmarking/scaling/(results|packages)/''',
 ]

@@ -1,5 +1,8 @@
 # Harbour-FL benchmark adapter
 
+The [participant scaling runner](scaling/README.md) measures variable client fleets. Recovery evaluations use this
+adapter and `scenarios.json`, including checkpoint failures, hub interruptions and restart-budget persistence.
+
 This directory supplies the Harbour-FL binding for benchmarking against Core recovery supervision. `adapter.py` accepts
 a validated request, writes an effective scenario, and executes the small `benchmark.py` entry point. `integration.py`
 supplies deployment identities, FL setup/cleanup, data faults, and application progress parsing. `harbour_profile.py`
@@ -21,7 +24,7 @@ From the application directory, run a repeated, paired checkpoint experiment wit
 
 ```bash
 mise run setup:benchmark
-.venv/bin/python benchmarking/benchmark.py checkpoint-recovery-stale --repetitions 5 --paired-baseline --seed 17
+mise run benchmark checkpoint-recovery-stale --repetitions 5 --paired-baseline --seed 17
 ```
 
 The UI provides the same pairing option and increments the timing seed across its repetitions. The training seed remains
@@ -41,6 +44,12 @@ hardware and data volume.
 The [experiment guide](../../../experiments/reliability-benchmarks/controllers/experiments.md) defines the metrics,
 confidence intervals, comparison groups, service continuity and participant return.
 
+Start recovery evaluations with `mise run benchmark recovery-smoke`. Use `--paired-baseline` for matched comparisons,
+for example `mise run benchmark hub-outage-availability --paired-baseline`. Rejected-command tests retain before/after
+supervisor state and restore permissions. `checkpoint-write-budget` intentionally records unsuccessful recovery after
+the configured restart budget is consumed; a failed result is not a successful training run. Checkpoint integrity and
+write-preservation checks also run in the application's Core SDK integration tests.
+
 ## Scenario defaults
 
 These are the defaults from `scenarios.json`; permitted UI overrides can change their parameters.
@@ -49,6 +58,13 @@ Unless noted otherwise, scenarios default to observe-only recovery.
 | Scenario                         | Description                                                                |
 | -------------------------------- | -------------------------------------------------------------------------- |
 | `baseline`                       | Three-client reference run without injected faults.                        |
+| `recovery-smoke`                 | Two-round healthy check before recovery faults.                            |
+| `checkpoint-write-budget`        | Record failed recovery after checkpoint-write failure exhausts the budget. |
+| `hub-restart`                    | Restart the hub under supervision and verify subsequent training progress. |
+| `hub-outage`                     | Stop the hub for 30 seconds, restore it and verify training progress.      |
+| `restart-command-rejected`       | Reject a restart; verify consumed budget survives supervisor replacement.  |
+| `hub-restart-availability`       | Twenty-round hub-restart run with functional availability probes.          |
+| `hub-outage-availability`        | Twenty-round hub-outage run with functional availability probes.           |
 | `reference-training-outage`      | Continue with two clients, then verify fresh participation from vessel-3.  |
 | `reference-client-stage-restart` | Seeded training/update-transfer observation before a client restart.       |
 | `checkpoint-recovery-recent`     | Restore a recent checkpoint and verify unfinished processing resumes.      |

@@ -1,0 +1,11 @@
+[package]
+edition = "2024"
+name = "hub-network-agents"
+version = "0.1.0"
+
+[dependencies]
+futures-util = { version = "0.3", features = ["sink"] }
+serde_json = "1"
+socket2 = "0.6"
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["handshake"] }
