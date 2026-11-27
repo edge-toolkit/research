@@ -48,6 +48,26 @@ def measurements(incidents, gaps=()):
     }
 
 
+def restoration_gap(raw, previous_elapsed=0):
+    """Recognise a closed restart gap, including Core's graceful-stop reason.
+
+    Core may close a ``supervision stopped`` gap during restoration without changing its reason.
+    Durable context must also be validated; the label alone cannot establish continuation.
+    """
+    elapsed = raw.get("context", {}).get("elapsed_seconds")
+    if type(elapsed) is not int or type(previous_elapsed) is not int or elapsed < previous_elapsed:
+        return False
+    return any(
+        isinstance(gap, dict)
+        and gap.get("reason") in {"supervisor restart", "supervision stopped"}
+        and type(gap.get("started_at")) is int
+        and type(gap.get("ended_at")) is int
+        and 0 <= gap["started_at"] <= gap["ended_at"] <= elapsed
+        and gap["ended_at"] >= previous_elapsed
+        for gap in raw.get("observation_gaps", [])
+    )
+
+
 def verify_continuation(previous, current):
     """Accept replacement only with the same durable context, preserved history and an explicit restart gap."""
     old, new = previous.get("context", {}), current.get("context", {})
@@ -60,7 +80,7 @@ def verify_continuation(previous, current):
         and new["restored_sessions"] > old.get("restored_sessions", 0)
         and new.get("elapsed_seconds", -1) >= old.get("elapsed_seconds", 0)
         and current.get("clock_basis") == "observer-elapsed-seconds-with-restart-gaps"
-        and any(gap.get("reason") == "supervisor restart" for gap in current.get("observation_gaps", []))
+        and restoration_gap(current, old.get("elapsed_seconds", 0))
     )
     old_incidents, new_incidents = previous.get("incidents", []), current.get("incidents", [])
     valid = valid and len(new_incidents) >= len(old_incidents)

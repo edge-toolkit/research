@@ -1,0 +1,42 @@
+{
+  "agents": 25000,
+  "repetitions": 1,
+  "hold_seconds": 120,
+  "registration_budget_seconds": 1800,
+  "minimum_available_memory_bytes": 17179869184,
+  "maximum_host_cpu_percent": 85,
+  "host_cpu_guard_samples": 5,
+  "maximum_swap_out_growth_bytes": 134217728,
+  "hub_memory": "4g",
+  "driver_memory": "8g",
+  "router_memory": "2g",
+  "router_cpus": 2,
+  "shared_queue_packets": 65536,
+  "timing_probes": 8,
+  "cases": [
+    { "id": "baseline", "rate_kbit": 0, "loss_percent": 0, "delay_ms_each_direction": 0 },
+    { "id": "bandwidth-10kbit-per-vessel", "rate_kbit": 10, "loss_percent": 0, "delay_ms_each_direction": 0 },
+    { "id": "latency-500ms-rtt", "rate_kbit": 0, "loss_percent": 0, "delay_ms_each_direction": 250 },
+    {
+      "id": "loss-30pct",
+      "rate_kbit": 0,
+      "loss_percent": 30,
+      "delay_ms_each_direction": 0,
+      "loss_after_registration": true,
+      "tolerant_timeouts": true,
+      "reconnect": true,
+      "policy": {
+        "idle_timeout": "120s",
+        "http_request_timeout": "60s",
+        "attempt_seconds": 75,
+        "backoff_base_ms": 1000,
+        "backoff_max_ms": 30000,
+        "jitter_seed": 20261120,
+        "admission_slots": 100,
+        "reserved_retry_slots": 20,
+        "borrow_admission": true
+      },
+      "observation": { "hold_seconds": 600, "settle_seconds": 120, "diagnostics": true, "followup_seconds": 60 }
+    }
+  ]
+}

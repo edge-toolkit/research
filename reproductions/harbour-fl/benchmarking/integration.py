@@ -25,6 +25,7 @@ from et_experiments.recovery.statistics import distribution
 from et_experiments.tracking.mlflow import TrackingConfig
 from et_experiments.utils import BenchmarkError, clean_log, iso, log_timestamp, percentile, progress
 from harbour_profile import enrich_report, normalise_progress, observe_training, tracking_recovery
+from recovery_faults import validate_fault
 from workload_settings import policy_environment, policy_settings, resilience_settings
 
 NAMESPACE = "et-harbour-fl"
@@ -35,7 +36,7 @@ SUPPORTING_DEPLOYMENTS = ("ws-server", "mlflow", "mlflow-bridge")
 STRESS_IMAGE = "harbour-fl-pyo3:local"
 EXPERIMENT_NAME = "vessel-multimodal-fl"
 ROUND_COMPLETE = re.compile(r"coordinator completed round (\d+): (\{.*\})")
-CLIENT_COMPLETE = re.compile(r"(vessel_[123]) completed round (\d+): (\{.*\})")
+CLIENT_COMPLETE = re.compile(r"(vessel_[0-9]+) completed round (\d+): (\{.*\})")
 CHECKPOINT_WRITE = re.compile(r"checkpoint write round (\d+) completed in ([0-9.]+) seconds")
 
 
@@ -45,7 +46,7 @@ def recovery_config():
     return config
 
 
-def parse_logs(logs: dict[str, str], rounds_expected: int) -> dict[str, Any]:
+def parse_logs(logs: dict[str, str], rounds_expected: int, workers=CLIENT_DEPLOYMENTS) -> dict[str, Any]:
     """Extract round progress, client metrics and checkpoint timings while retaining coordinator failure evidence."""
     coordinator = logs.get("vessel-coordinator", "")
     round_records: list[dict[str, Any]] = []
@@ -88,7 +89,7 @@ def parse_logs(logs: dict[str, str], rounds_expected: int) -> dict[str, Any]:
         previous = completed or previous
 
     clients: dict[str, list[dict[str, Any]]] = {}
-    for deployment in ("vessel-1", "vessel-2", "vessel-3"):
+    for deployment in workers:
         for raw in logs.get(deployment, "").splitlines():
             line = clean_log(raw)
             match = CLIENT_COMPLETE.search(line)
@@ -406,7 +407,7 @@ class HarbourFLAdapter:
         return recovery_config()
 
     def parse_logs(self, logs, rounds_expected):
-        return parse_logs(logs, rounds_expected)
+        return parse_logs(logs, rounds_expected, self.config.workers)
 
     def expected_units(self, scenario):
         return int(scenario["rounds"])
@@ -417,7 +418,7 @@ class HarbourFLAdapter:
         validate_compute(scenario)
         policy_settings(scenario, recovery_config()["policy"])
         for key, upper in (
-            ("minimum_clients", 3),
+            ("minimum_clients", len(self.config.workers)),
             ("local_epochs", 50),
             ("batch_size", 256),
             ("torch_threads", 32),
@@ -440,6 +441,7 @@ class HarbourFLAdapter:
         if scenario.get("evaluate_degraded_inputs"):
             scenario["completion_event"] = "completed"
         fault = scenario["fault"]
+        validate_fault(fault, self.config.workers)
         application_fault(fault)
         if fault.get("type") == "client_oom":
             fault["type"] = "worker_oom"
@@ -581,10 +583,20 @@ class HarbourFLAdapter:
         return tracking_recovery(state, expected_units, self.metric_aliases["loss"], fault, verified_at)
 
     def configure_run(self, backend, faults, job_id, scenario, started):
+        self._recovery_cleanup = getattr(faults, "restore_recovery", None)
         configure_run(backend, faults, job_id, scenario, started)
 
     def restore(self, backend):
-        restore(backend)
+        errors = []
+        for action in (getattr(self, "_recovery_cleanup", None), lambda: restore(backend)):
+            if action is None:
+                continue
+            try:
+                action()
+            except (BenchmarkError, OSError, subprocess.TimeoutExpired) as error:
+                errors.append(str(error))
+        if errors:
+            raise BenchmarkError("Application restoration failed: " + "; ".join(errors))
 
     def application_fault(self, fault):
         return application_fault(fault)

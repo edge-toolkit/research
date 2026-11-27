@@ -1,0 +1,57 @@
+{
+  "context": "k3d-harbour-fl",
+  "source_namespace": "et-harbour-fl",
+  "namespace": "et-benchmark-scaling-per-client",
+  "clients": [
+    1,
+    3,
+    6,
+    12,
+    24
+  ],
+  "rounds": 3,
+  "repetitions": 1,
+  "local_epochs": 2,
+  "batch_size": 4,
+  "torch_threads": 1,
+  "seed": 17,
+  "sample_interval_seconds": 5,
+  "round_timeout_seconds": 1800,
+  "job_timeout_seconds": 10800,
+  "resources": {
+    "client": {
+      "requests": {
+        "cpu": "500m",
+        "memory": "1Gi"
+      },
+      "limits": {
+        "cpu": "1",
+        "memory": "4Gi"
+      }
+    },
+    "coordinator": {
+      "requests": {
+        "cpu": "500m",
+        "memory": "1Gi"
+      },
+      "limits": {
+        "cpu": "2",
+        "memory": "8Gi"
+      }
+    },
+    "hub": {
+      "requests": {
+        "cpu": "100m",
+        "memory": "128Mi"
+      },
+      "limits": {
+        "cpu": "2",
+        "memory": "4Gi"
+      }
+    }
+  },
+  "study_design": "fixed_per_client",
+  "train_samples_per_client": 160,
+  "validation_samples_per_client": 32,
+  "application": ""
+}

@@ -807,5 +807,190 @@
         "progress": 1
       }
     }
+  },
+  "recovery-smoke": {
+    "model_profile": "pretrained",
+    "rounds": 2,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 2400,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32
+    },
+    "description": "Two-round healthy check before recovery fault scenarios",
+    "fault": {
+      "type": "none"
+    }
+  },
+  "checkpoint-write-budget": {
+    "model_profile": "pretrained",
+    "rounds": 3,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 1200,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32
+    },
+    "description": "Reject a checkpoint write and record bounded non-recovery after restart-budget exhaustion",
+    "fault": {
+      "type": "checkpoint_write_failure",
+      "target": "vessel-coordinator",
+      "round": 1
+    },
+    "require_recovery": true,
+    "recovery_policy": {
+      "max_restarts": 1,
+      "detection_grace_seconds": 3,
+      "restart_after_seconds": 10,
+      "deadline_seconds": 120
+    }
+  },
+  "hub-restart": {
+    "model_profile": "pretrained",
+    "rounds": 3,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 2400,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32
+    },
+    "description": "Restart the hub under Core supervision and require subsequent application progress",
+    "fault": {
+      "type": "rollout_restart",
+      "target": "ws-server",
+      "after_round": 0
+    },
+    "require_post_fault_progress": true,
+    "post_fault_progress_timeout_seconds": 360
+  },
+  "hub-outage": {
+    "model_profile": "pretrained",
+    "rounds": 3,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 2400,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32
+    },
+    "description": "Stop the hub for 30 seconds, restore it and verify subsequent application progress",
+    "fault": {
+      "type": "hub_outage",
+      "target": "ws-server",
+      "duration_seconds": 30,
+      "after_round": 0
+    },
+    "require_post_fault_progress": true,
+    "post_fault_progress_timeout_seconds": 360
+  },
+  "restart-command-rejected": {
+    "model_profile": "pretrained",
+    "rounds": 3,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 1200,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32
+    },
+    "description": "Reject a supervisor restart command and verify durable budget across supervisor replacement",
+    "fault": {
+      "type": "restart_command_rejected",
+      "target": "vessel-3",
+      "duration_seconds": 70,
+      "after_round": 0
+    },
+    "recovery_policy": {
+      "max_restarts": 1,
+      "detection_grace_seconds": 3,
+      "restart_after_seconds": 10,
+      "deadline_seconds": 120
+    }
+  },
+  "hub-restart-availability": {
+    "model_profile": "pretrained",
+    "rounds": 20,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 7200,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32,
+      "required_workers": 2
+    },
+    "description": "Twenty-round functional availability measurement: hub-restart",
+    "fault": {
+      "type": "rollout_restart",
+      "target": "ws-server",
+      "after_round": 0
+    },
+    "require_post_fault_progress": true,
+    "post_fault_progress_timeout_seconds": 360
+  },
+  "hub-outage-availability": {
+    "model_profile": "pretrained",
+    "rounds": 20,
+    "local_epochs": 2,
+    "batch_size": 16,
+    "torch_threads": 2,
+    "training_seed": 17,
+    "round_timeout_seconds": 900,
+    "timeout_seconds": 7200,
+    "recovery_mode": "controller-assisted",
+    "service_probes": {
+      "enabled": true,
+      "interval_seconds": 2,
+      "timeout_seconds": 5,
+      "rtt_payload_bytes": 32,
+      "required_workers": 2
+    },
+    "description": "Twenty-round functional availability measurement: hub-outage",
+    "fault": {
+      "type": "hub_outage",
+      "target": "ws-server",
+      "duration_seconds": 30,
+      "after_round": 0
+    },
+    "require_post_fault_progress": true,
+    "post_fault_progress_timeout_seconds": 360
   }
 }

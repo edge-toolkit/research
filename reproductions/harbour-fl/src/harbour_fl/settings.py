@@ -16,7 +16,15 @@ SCHEMA_VERSION = 1
 MLFLOW_SCHEMA_VERSION = 1
 MLFLOW_PRODUCER = "harbour-fl-demo"
 DEFAULT_DATA_ROOT = "data/prepared"
-DEFAULT_CLIENTS = ("vessel_1", "vessel_2", "vessel_3")
+DEFAULT_CLIENTS = tuple(
+    name.strip() for name in os.environ.get("HARBOUR_FL_CLIENTS", "vessel_1,vessel_2,vessel_3").split(",")
+)
+if (
+    not DEFAULT_CLIENTS
+    or len(set(DEFAULT_CLIENTS)) != len(DEFAULT_CLIENTS)
+    or any(not name.startswith("vessel_") or not name[7:].isdigit() for name in DEFAULT_CLIENTS)
+):
+    raise ValueError("HARBOUR_FL_CLIENTS must contain unique vessel_<number> identities")
 
 
 def _bool_env(name: str, default: bool = False) -> bool:

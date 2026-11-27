@@ -7,7 +7,7 @@ import re
 import time
 
 from et_experiments.recovery.core import parse_events
-from et_experiments.recovery.supervision import CLOCKS, measurements, stability, verify_continuation
+from et_experiments.recovery.supervision import CLOCKS, measurements, restoration_gap, stability, verify_continuation
 from et_experiments.utils import BenchmarkError
 
 
@@ -70,7 +70,7 @@ def normalize_report(raw, job_id, mode):
         or type(context.get("restored_sessions")) is not int
         or context["restored_sessions"] < 1
         or context.get("configuration", {}).get("job_id") != job_id
-        or not any(gap.get("reason") == "supervisor restart" for gap in raw.get("observation_gaps", []))
+        or not restoration_gap(raw)
     ):
         raise BenchmarkError("Core restored observer clock lacks durable recovery context")
     incidents = []

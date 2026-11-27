@@ -121,6 +121,7 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 failed=0
 for config in $(git ls-files '*mise.toml'); do
+  if [ ! -f "$config" ]; then continue; fi
   lock="$(dirname "$config")/mise.lock"
   if ! git ls-files --error-unmatch "$lock" >/dev/null 2>&1; then
     echo "$config has no committed mise.lock; run \\`mise lock\\` beside it and commit the result" >&2
@@ -129,6 +130,8 @@ for config in $(git ls-files '*mise.toml'); do
 done
 i=0
 for lock in $(git ls-files '*mise.lock'); do
+  directory="$(dirname "$lock")"
+  if [ ! -f "$lock" ] && [ ! -f "$directory/mise.toml" ] && [ ! -f "$directory/.mise.toml" ]; then continue; fi
   i=$((i + 1))
   if [ -f "$lock" ]; then cp "$lock" "$tmp/$i"; else : > "$tmp/$i"; fi
   mise -C "$(dirname "$lock")" lock --quiet

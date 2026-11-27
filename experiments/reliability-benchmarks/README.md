@@ -31,6 +31,9 @@ application deployment; each controller runs one experiment at a time.
 
 ## Workspace layout
 
+- [hub network](evaluations/hub-network/README.md): heartbeat fleets under bandwidth, loss and latency limits.
+- [hub failover](evaluations/hub-failover/README.md): controlled primary loss with a qualified fleet and verified work
+  through the standby hub.
 - [controllers](controllers/README.md): the independently installable package for benchmarking, Core recovery evidence,
   metrics, tracking, and the browser UI. Application code and deployments remain separate.
 - [minimal adapter](examples/minimal-adapter/adapter.py): a runnable process-interface example using synthetic results.

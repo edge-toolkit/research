@@ -108,6 +108,11 @@ depends = ["setup:python"]
 description = "Install the external benchmark adapter's operator-side dependencies"
 run = "uv pip install --python .venv -r requirements-benchmark.txt"
 
+[tasks.benchmark]
+depends = ["setup:benchmark"]
+description = "Run or list Harbour-FL benchmark scenarios, including recovery and availability checks"
+run = ".venv/bin/python benchmarking/benchmark.py"
+
 [tasks.benchmark-ui]
 depends = ["setup:benchmark"]
 description = "Open the standalone benchmark UI with the Harbour-FL adapter catalog"

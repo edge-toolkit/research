@@ -9,12 +9,21 @@ from et_experiments.benchmarking.cli import main
 from et_experiments.benchmarking.engine import BenchmarkEngine
 from et_experiments.utils import BenchmarkError
 from integration import HarbourFLAdapter
+from recovery_faults import HarbourRecoveryFaults
+
+
+def engine():
+    """Use the maintained adapter and bounded application recovery faults for CLI and UI runs."""
+    instance = BenchmarkEngine(HarbourFLAdapter())
+    instance.faults = HarbourRecoveryFaults(instance.backend, instance.application)
+    return instance
+
 
 if __name__ == "__main__":
     try:
         raise SystemExit(
             main(
-                BenchmarkEngine(HarbourFLAdapter()),
+                engine(),
                 Path(__file__).with_name("scenarios.json"),
                 Path(__file__).parents[1] / "results" / "benchmarks",
             )

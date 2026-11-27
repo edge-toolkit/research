@@ -1,7 +1,8 @@
 # Harbour-FL
 
-Harbour-FL is a research project built on Edge Toolkit. It demonstrates multimodal federated learning with three
-logical vessel clients, a coordinator, MLflow experiment tracking, and operator-side reliability benchmarks.
+Harbour-FL is a research project built on Edge Toolkit. It demonstrates multimodal federated learning on the Croatia
+vessel dataset with three logical vessel clients, a coordinator, MLflow experiment tracking, and operator-side
+reliability benchmarks.
 
 Potential applications include classifying commercial and fishing vessels alongside recreational boats for harbour
 traffic monitoring, coastal observation and fishing-fleet studies. The federated approach could support learning

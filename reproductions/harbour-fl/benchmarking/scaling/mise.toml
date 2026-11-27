@@ -1,0 +1,19 @@
+[tools]
+python = "latest"
+uv = "latest"
+
+[tasks.scaling]
+description = "Plan, check, smoke, run or inspect participant scaling (fixed work per client by default)"
+run = "uv run --python python --project . python cli.py"
+
+[tasks.package]
+description = "Archive scaling source"
+run = "uv run --python python --project . python package.py"
+
+[tasks.pack-results]
+description = "Archive scaling measurements and logs"
+run = "uv run --python python --project . python package.py --results"
+
+[tasks.test]
+description = "Check partitioning, workload provenance, measurements and cleanup without a cluster"
+run = "uv run --python python python -m unittest discover -p 'test_*.py'"

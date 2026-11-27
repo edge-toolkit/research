@@ -92,7 +92,9 @@ def network_fault_arguments(fault: dict[str, Any]) -> tuple[str, ...]:
     if fault_type == "network_latency":
         latency = bounded_number(fault, "latency_ms", 1, 5000, 250)
         jitter = bounded_number(fault, "jitter_ms", 0, latency, 50)
-        return ("delay", f"{latency:g}ms", f"{jitter:g}ms", "distribution", "normal")
+        # netem rejects "distribution specified but no latency and jitter values" when jitter is zero.
+        delay = ("delay", f"{latency:g}ms")
+        return (*delay, f"{jitter:g}ms", "distribution", "normal") if jitter else delay
     if fault_type == "network_bandwidth":
         rate = int(bounded_number(fault, "rate_kbit", 8, 1_000_000, 256))
         return ("rate", f"{rate}kbit")
@@ -106,17 +108,10 @@ def network_fault_arguments(fault: dict[str, Any]) -> tuple[str, ...]:
         jitter = bounded_number(fault, "jitter_ms", 0, latency, 50)
         loss = bounded_number(fault, "loss_percent", 0.1, 99, 5)
         rate = int(bounded_number(fault, "rate_kbit", 8, 1_000_000, 512))
-        return (
-            "delay",
-            f"{latency:g}ms",
-            f"{jitter:g}ms",
-            "distribution",
-            "normal",
-            "loss",
-            f"{loss:g}%",
-            "rate",
-            f"{rate}kbit",
-        )
+        delay = ("delay", f"{latency:g}ms")
+        if jitter:
+            delay = (*delay, f"{jitter:g}ms", "distribution", "normal")
+        return (*delay, "loss", f"{loss:g}%", "rate", f"{rate}kbit")
     raise BenchmarkError(f"unsupported network fault type: {fault_type}")
 
 

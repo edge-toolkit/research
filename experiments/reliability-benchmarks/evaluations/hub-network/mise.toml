@@ -1,0 +1,10 @@
+[tools]
+python = "latest"
+uv = "latest"
+
+[tasks.hub-network]
+description = "Prepare, check, smoke, run, clean up or package the 25,000-agent maritime network study"
+run = "uv run --python python --project . python study.py"
+
+[tasks.test]
+run = "uv run --python python --project . python -m unittest discover -s tests"
